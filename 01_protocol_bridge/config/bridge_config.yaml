@@ -1,6 +1,6 @@
 project:
   name: mqtt-vsoa-protocol-bridge
-  owner: 卢静旭
+  owner: [姓名]
   log_level: INFO
 
 mqtt:
@@ -31,4 +31,5 @@ schema:
     - device_id
     - command
     - params
+
 

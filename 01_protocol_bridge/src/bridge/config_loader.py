@@ -10,7 +10,7 @@ except ModuleNotFoundError:  # pragma: no cover - exercised when PyYAML is unava
 DEFAULT_CONFIG = {
     "project": {
         "name": "mqtt-vsoa-protocol-bridge",
-        "owner": "卢静旭",
+        "owner": "[姓名]",
         "log_level": "INFO",
     },
     "mqtt": {
@@ -47,3 +47,4 @@ def load_config(path: Union[str, Path]) -> dict:
         data = yaml.safe_load(file) or {}
 
     return data
+
