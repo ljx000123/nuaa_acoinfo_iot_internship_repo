@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+.venv/
+venv/
+
+# Runtime output
+logs/*.log
+*.log
+
+# Office temporary files
+~$*
+*.tmp
+
+# Archives generated for delivery
+*.zip
+

@@ -1,0 +1,11 @@
+{
+  "protocol": "zigbee",
+  "device_id": "cc2530-001",
+  "command": "set_led",
+  "params": {
+    "state": "on",
+    "duration_ms": 3000
+  },
+  "request_id": "cmd-20260702-001"
+}
+

@@ -1,0 +1,15 @@
+{
+  "protocol": "zigbee",
+  "device_id": "cc2530-001",
+  "timestamp": "2026-07-02T10:05:00Z",
+  "data": {
+    "temperature": 25.8,
+    "humidity": 58.9,
+    "air_quality": 42
+  },
+  "meta": {
+    "experiment": "Z6",
+    "network_role": "router"
+  }
+}
+

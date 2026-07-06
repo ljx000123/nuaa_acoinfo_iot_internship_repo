@@ -1,0 +1,34 @@
+project:
+  name: mqtt-vsoa-protocol-bridge
+  owner: 卢静旭
+  log_level: INFO
+
+mqtt:
+  broker_host: localhost
+  broker_port: 1883
+  client_id: mqtt-vsoa-bridge
+  username: ""
+  password: ""
+  uplink_topics:
+    - iot/lora/+/uplink
+    - iot/zigbee/+/uplink
+  downlink_topic_template: iot/{protocol}/{device_id}/downlink
+
+vsoa:
+  mode: mock
+  host: localhost
+  port: 3000
+  service_name: iot_bridge_service
+
+schema:
+  required_uplink_fields:
+    - protocol
+    - device_id
+    - timestamp
+    - data
+  required_command_fields:
+    - protocol
+    - device_id
+    - command
+    - params
+
