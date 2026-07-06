@@ -11,9 +11,10 @@
 | Z3 | ZigBee 传感数据采集与 MQTT 发布实验 | 代码 + 指导书 + PPT |
 | Z4 | ZigBee 下行控制与智能开关实验 | 代码 + 指导书 + PPT |
 | Z5 | ZigBee-RS485 无线透传与工业数据采集实验 | 代码 + 指导书 + PPT |
-| Z6 | ZigBee MQTT <-> VSOA 双向协议转换实验 | 代码 + 指导书 + PPT |
 | Z7 | 智能家居环境监测与联动告警实验 | 代码 + 指导书 + PPT |
 | Z8 | ZigBee 工业现场数据采集综合实验 | 代码 + 指导书 + PPT |
+
+说明：Z6 属于协议桥接组，目录放在 `01_protocol_bridge/experiments/`。
 
 ## 目录建议
 
@@ -29,7 +30,6 @@
     Z03_sensor_to_mqtt/
     Z04_downlink_control/
     Z05_rs485_transparent/
-    Z06_mqtt_vsoa_bridge/
     Z07_smart_home_alarm/
     Z08_industrial_collection/
   scripts/

@@ -39,9 +39,9 @@ mqtt_vsoa_bridge_project/
 ```text
 experiments/
   B00_common_framework/       公共工程模板与测试框架
-  B01_lora_mqtt_to_vsoa/      支撑 L5 LoRa 上行桥接
-  B02_lora_vsoa_to_mqtt/      支撑 L6 LoRa 下行桥接
-  B03_zigbee_mqtt_vsoa/       支撑 Z6 ZigBee 双向桥接
+  L05_mqtt_to_vsoa/           L5 LoRa MQTT -> VSOA 上行协议转换实验
+  L06_vsoa_to_mqtt/           L6 LoRa VSOA -> MQTT 下行控制实验
+  Z06_mqtt_vsoa_bridge/       Z6 ZigBee MQTT <-> VSOA 双向协议转换实验
 ```
 
 每个支撑实验目录下均包含 `src/`、`config/`、`docs/`、`slides/`、`tests/`、`assets/` 六个子目录。

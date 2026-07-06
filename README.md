@@ -35,14 +35,15 @@ tests/
 
 ## 实验目录
 
-16 个课程实验按方向放入对应项目的 `experiments/` 目录：
+16 个课程实验按分组放入对应项目的 `experiments/` 目录，其中 L5、L6、Z6 属于协议桥接组：
 
 | 方向 | 实验编号 | 目录 |
 | --- | --- | --- |
-| LoRa/LoRaWAN | L1-L8 | `02_lora_lorawan/experiments/` |
-| ZigBee | Z1-Z8 | `03_zigbee/experiments/` |
+| 协议桥接 | L5、L6、Z6 | `01_protocol_bridge/experiments/` |
+| LoRa/LoRaWAN | L1-L4、L7-L8 | `02_lora_lorawan/experiments/` |
+| ZigBee | Z1-Z5、Z7-Z8 | `03_zigbee/experiments/` |
 
-协议桥接项目的 `experiments/` 放置公共框架和桥接支撑实验，用于支撑 L5、L6、Z6 以及综合场景联调。
+协议桥接项目的 `experiments/` 同时保留 `B00_common_framework/`，用于放置统一日志、测试脚本框架和协议转换公共能力。
 
 ## 公共交付物
 

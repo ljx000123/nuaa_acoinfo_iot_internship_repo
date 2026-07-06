@@ -10,10 +10,10 @@
 | L2 | LoRa 传感数据采集与上报实验 | 代码 + 指导书 + PPT |
 | L3 | LoRa 可靠传输：ACK、重传与丢包统计 | 代码 + 指导书 + PPT |
 | L4 | LoRaWAN 网关接入与 MQTT 上行 | 代码 + 指导书 + PPT |
-| L5 | LoRa MQTT -> VSOA 上行协议转换实验 | 代码 + 指导书 + PPT |
-| L6 | LoRa VSOA -> MQTT 下行控制实验 | 代码 + 指导书 + PPT |
 | L7 | LoRa 链路质量监测与可视化实验 | 代码 + 指导书 + PPT |
 | L8 | LoRa 低功耗环境监测综合场景 | 代码 + 指导书 + PPT |
+
+说明：L5、L6 属于协议桥接组，目录放在 `01_protocol_bridge/experiments/`。
 
 ## 目录建议
 
@@ -28,8 +28,6 @@
     L02_sensor_uplink/
     L03_ack_retransmit/
     L04_lorawan_mqtt/
-    L05_mqtt_to_vsoa/
-    L06_vsoa_to_mqtt/
     L07_link_quality/
     L08_low_power_monitoring/
   scripts/
