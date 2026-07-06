@@ -13,7 +13,7 @@
 - PyYAML
 - paho-mqtt
 - 可选：本地 MQTT broker
-- 可选：翼辉 ADP / VSOA SDK
+- 可选：ACOINFO ADP / VSOA SDK
 
 ## 3. 测试范围
 

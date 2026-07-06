@@ -17,7 +17,7 @@
 - 测试脚本和验收清单
 - 项目设计文档、测试说明、实验指导书和 PPT 模板
 
-真实接入翼辉 ADP 或 VSOA SDK 时，只需要替换 `src/bridge/vsoa_adapter.py` 中的模拟实现。
+真实接入 ACOINFO ADP 或 VSOA SDK 时，只需要替换 `src/bridge/vsoa_adapter.py` 中的模拟实现。
 
 ## 2. 目录结构
 

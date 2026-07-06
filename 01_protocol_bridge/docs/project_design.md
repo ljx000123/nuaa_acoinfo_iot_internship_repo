@@ -70,7 +70,7 @@ VSOA Client -> Bridge -> MQTT Broker -> LoRa/ZigBee Device
 
 文件：`src/bridge/vsoa_adapter.py`
 
-当前提供 `MockVsoaService` 用于本地测试。真实项目中可替换为翼辉 ADP 或 VSOA SDK 接口。
+当前提供 `MockVsoaService` 用于本地测试。真实项目中可替换为 ACOINFO ADP 或 VSOA SDK 接口。
 
 ### 4.5 桥接服务模块
 
@@ -138,7 +138,7 @@ iot/zigbee/cc2530-001/downlink
 ## 7. 后续扩展
 
 - 接入真实 MQTT broker
-- 接入翼辉 VSOA SDK
+- 接入 ACOINFO VSOA SDK
 - 增加断线重连机制
 - 增加命令回执等待和超时处理
 - 增加多设备并发测试
