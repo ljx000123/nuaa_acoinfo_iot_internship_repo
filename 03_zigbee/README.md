@@ -19,9 +19,22 @@
 
 ```text
 03_zigbee/
-  experiments/
-  docs/
-  tests/
   assets/
+  config/
+  docs/
+  examples/
+  experiments/
+    Z01_cc2530_hello/
+    Z02_networking/
+    Z03_sensor_to_mqtt/
+    Z04_downlink_control/
+    Z05_rs485_transparent/
+    Z06_mqtt_vsoa_bridge/
+    Z07_smart_home_alarm/
+    Z08_industrial_collection/
+  scripts/
+  src/
+  tests/
 ```
 
+每个实验目录下均包含 `src/`、`config/`、`docs/`、`slides/`、`tests/`、`assets/` 六个子目录。

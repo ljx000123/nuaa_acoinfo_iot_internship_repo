@@ -34,6 +34,18 @@ mqtt_vsoa_bridge_project/
   requirements.txt        Python 依赖
 ```
 
+## 2.1 桥接支撑实验目录
+
+```text
+experiments/
+  B00_common_framework/       公共工程模板与测试框架
+  B01_lora_mqtt_to_vsoa/      支撑 L5 LoRa 上行桥接
+  B02_lora_vsoa_to_mqtt/      支撑 L6 LoRa 下行桥接
+  B03_zigbee_mqtt_vsoa/       支撑 Z6 ZigBee 双向桥接
+```
+
+每个支撑实验目录下均包含 `src/`、`config/`、`docs/`、`slides/`、`tests/`、`assets/` 六个子目录。
+
 ## 3. 快速开始
 
 ```bash

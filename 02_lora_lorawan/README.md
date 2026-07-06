@@ -19,9 +19,22 @@
 
 ```text
 02_lora_lorawan/
-  experiments/
-  docs/
-  tests/
   assets/
+  config/
+  docs/
+  examples/
+  experiments/
+    L01_lora_hello/
+    L02_sensor_uplink/
+    L03_ack_retransmit/
+    L04_lorawan_mqtt/
+    L05_mqtt_to_vsoa/
+    L06_vsoa_to_mqtt/
+    L07_link_quality/
+    L08_low_power_monitoring/
+  scripts/
+  src/
+  tests/
 ```
 
+每个实验目录下均包含 `src/`、`config/`、`docs/`、`slides/`、`tests/`、`assets/` 六个子目录。

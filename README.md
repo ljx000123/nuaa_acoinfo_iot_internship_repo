@@ -12,6 +12,19 @@ nuaa_winghui_iot_internship_repo/
   common/               三个项目共用模板、规范、校标和验收材料
 ```
 
+每个项目目录下均包含统一结构：
+
+```text
+assets/
+config/
+docs/
+examples/
+experiments/
+scripts/
+src/
+tests/
+```
+
 ## 三个项目
 
 | 编号 | 项目名称 | 主要目标 |
@@ -19,6 +32,17 @@ nuaa_winghui_iot_internship_repo/
 | 01 | 物联网传输协议桥接组件开发 | 实现 MQTT 与 VSOA 之间的数据转换、消息转发和接口适配 |
 | 02 | 物联网 LoRa/LoRaWAN 应用案例开发 | 完成 LoRa 终端数据采集、网关接入、平台解析和应用展示 |
 | 03 | 物联网 ZigBee 应用案例开发 | 完成 ZigBee 组网、数据采集、网关接入和应用展示 |
+
+## 实验目录
+
+16 个课程实验按方向放入对应项目的 `experiments/` 目录：
+
+| 方向 | 实验编号 | 目录 |
+| --- | --- | --- |
+| LoRa/LoRaWAN | L1-L8 | `02_lora_lorawan/experiments/` |
+| ZigBee | Z1-Z8 | `03_zigbee/experiments/` |
+
+协议桥接项目的 `experiments/` 放置公共框架和桥接支撑实验，用于支撑 L5、L6、Z6 以及综合场景联调。
 
 ## 公共交付物
 
@@ -34,8 +58,7 @@ nuaa_winghui_iot_internship_repo/
 ## 协作规则
 
 1. 每个实验单独建立目录，命名格式建议为 `L01_xxx`、`Z01_xxx` 或 `B01_xxx`。
-2. 每个实验至少包含 `src/`、`docs/`、`slides/`、`tests/`、`assets/`。
+2. 每个实验至少包含 `src/`、`config/`、`docs/`、`slides/`、`tests/`、`assets/`。
 3. 所有实验指导书和 PPT 优先使用 `common/templates/` 中的统一模板。
 4. 代码、配置、测试记录和截图应能支持非作者交叉复现。
 5. 提交前先更新 README 和验收清单。
-
