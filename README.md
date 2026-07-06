@@ -49,7 +49,7 @@ tests/
 
 公共模板放在 `common/` 目录：
 
-- `common/templates/实验指导书模板_丰富版.docx`
+- `common/templates/ADP实验指导书.docx`
 - `common/templates/实验汇报PPT模板.pptx`
 - `common/templates/experiment_guide_template.md`
 - `common/templates/ppt_outline_template.md`
