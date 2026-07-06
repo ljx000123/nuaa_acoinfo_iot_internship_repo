@@ -5,7 +5,7 @@
 ## 项目结构
 
 ```text
-nuaa_winghui_iot_internship_repo/
+nuaa_acoinfo_iot_internship_repo/
   01_protocol_bridge/   物联网传输协议桥接组件开发
   02_lora_lorawan/      物联网 LoRa/LoRaWAN 应用案例开发
   03_zigbee/            物联网 ZigBee 应用案例开发
