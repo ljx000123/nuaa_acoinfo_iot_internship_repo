@@ -1,0 +1,15 @@
+# Python caches
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Runtime logs
+logs/*.log
+
+# Local environment
+.venv/
+venv/
+
+# Packaging scratch accidentally copied during export
+/mqtt_vsoa_bridge_project/
+
