@@ -9,6 +9,22 @@
 common/
 ```
 
+## 单个项目目录建议
+
+```text
+{project}/
+  assets/       项目级图片、截图、素材
+  config/       项目级配置文件
+  docs/         项目文档、测试文档、说明文档
+  examples/     示例数据、示例 payload、演示材料
+  experiments/  各实验独立目录
+  logs/         项目级运行日志或汇总日志
+  scripts/      启动脚本、演示脚本、辅助脚本
+  src/          项目源码
+  tests/        项目级测试脚本和测试记录
+  README.md     项目入口说明
+```
+
 ## 单个实验目录建议
 
 ```text
@@ -18,6 +34,7 @@ experiments/{实验编号}_{实验名称}/
   docs/       实验指导书、说明文档
   slides/     PPT 或汇报材料
   tests/      测试脚本和测试记录
+    logs/     本实验的编译日志、烧录日志、串口日志、联调日志
   assets/     接线图、截图、图片素材
   README.md   实验入口说明
 ```

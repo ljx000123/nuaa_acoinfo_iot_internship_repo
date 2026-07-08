@@ -32,6 +32,7 @@
     Z05_rs485_transparent/
     Z07_smart_home_alarm/
     Z08_industrial_collection/
+  logs/
   scripts/
   src/
   tests/

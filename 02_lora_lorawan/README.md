@@ -30,6 +30,7 @@
     L04_lorawan_mqtt/
     L07_link_quality/
     L08_low_power_monitoring/
+  logs/
   scripts/
   src/
   tests/

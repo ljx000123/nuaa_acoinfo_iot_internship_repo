@@ -20,6 +20,7 @@ config/
 docs/
 examples/
 experiments/
+logs/
 scripts/
 src/
 tests/
