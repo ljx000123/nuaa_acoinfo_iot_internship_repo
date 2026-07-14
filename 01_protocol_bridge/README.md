@@ -38,7 +38,6 @@ mqtt_vsoa_bridge_project/
 
 ```text
 experiments/
-  B00_common_framework/       公共工程模板与测试框架
   L05_mqtt_to_vsoa/           L5 LoRa MQTT -> VSOA 上行协议转换实验
   L06_vsoa_to_mqtt/           L6 LoRa VSOA -> MQTT 下行控制实验
   Z06_mqtt_vsoa_bridge/       Z6 ZigBee MQTT <-> VSOA 双向协议转换实验

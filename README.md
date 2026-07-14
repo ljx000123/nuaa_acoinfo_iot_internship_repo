@@ -12,8 +12,6 @@
 | 物联网 LoRa/LoRaWAN 应用案例开发 | [`02_lora_lorawan/`](02_lora_lorawan/) | L1-L4、L7-L8 | LoRa 通信、传感采集、LoRaWAN 接入和综合应用 |
 | 物联网 ZigBee 应用案例开发 | [`03_zigbee/`](03_zigbee/) | Z1-Z5、Z7-Z8 | ZigBee 组网、数据采集、设备控制和工业应用 |
 
-协议桥接项目中的 [`B00_common_framework/`](01_protocol_bridge/experiments/B00_common_framework/) 用于公共框架和跨组联调支撑，不计入 16 个正式实验。
-
 ## 2. 仓库结构
 
 ```text

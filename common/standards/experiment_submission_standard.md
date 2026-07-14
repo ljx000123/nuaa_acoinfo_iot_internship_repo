@@ -37,8 +37,6 @@
 | `02_lora_lorawan/` | LoRa/LoRaWAN 应用案例 | L1-L4、L7-L8 |
 | `03_zigbee/` | ZigBee 应用案例 | Z1-Z5、Z7-Z8 |
 
-`01_protocol_bridge/experiments/B00_common_framework/` 是公共框架目录，不计入 16 个正式实验。
-
 ## 3. 提交责任
 
 | 角色 | 主要责任 |
