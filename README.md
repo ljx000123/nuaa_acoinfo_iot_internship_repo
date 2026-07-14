@@ -54,6 +54,8 @@ tests/
 - `common/templates/实验指导书.md`
 - `common/templates/实验汇报PPT模板.pptx`
 - `common/templates/project_readme_template.md`
+- `common/templates/experiment_readme_template.md`
+- `common/standards/experiment_submission_standard.md`
 - `common/acceptance/acceptance_checklist.md`
 
 
