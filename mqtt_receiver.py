@@ -1,7 +1,6 @@
 import json
 import base64
 import paho.mqtt.client as mqtt
-from datetime import datetime
 
 
 # ==========================
@@ -9,52 +8,52 @@ from datetime import datetime
 # ==========================
 
 MQTT_HOST = "192.168.137.118"
-# 如果后端和ChirpStack同机器可以localhost
-# 如果其他电脑连接，需要填写T113的IP
 
 MQTT_PORT = 1883
 
-MQTT_TOPIC = "application/+/device/+/event/up"
+
+# 两个数据入口
+MQTT_TOPICS = [
+    ("application/+/device/+/event/up", 1),
+    ("s3/eora-s3-400tb-001/data", 1)
+]
 
 
 # ==========================
-# Payload解析
+# LoRa Payload解析
 # ==========================
 
 def parse_payload(payload):
 
     if len(payload) != 16:
-        print("Payload长度异常:",
-              len(payload))
+        print(
+            "Payload长度异常:",
+            len(payload)
+        )
         return None
 
 
-    # Byte 0-1
     seq = int.from_bytes(
         payload[0:2],
         byteorder="big"
     )
 
 
-    # Byte 2-5
     boot_id = int.from_bytes(
         payload[2:6],
         byteorder="big"
     )
 
 
-    # Byte 6-9
     send_time_ms = int.from_bytes(
         payload[6:10],
         byteorder="big"
     )
 
 
-    # Byte 10
     retry_count = payload[10]
 
 
-    # Byte 11-12
     temp_raw = int.from_bytes(
         payload[11:13],
         byteorder="big",
@@ -64,7 +63,7 @@ def parse_payload(payload):
     temperature = temp_raw / 10.0
 
 
-    # Byte 13-14
+
     humi_raw = int.from_bytes(
         payload[13:15],
         byteorder="big"
@@ -73,13 +72,14 @@ def parse_payload(payload):
     humidity = humi_raw / 10.0
 
 
-    # Byte15
+
     flags = payload[15]
 
 
     joined = bool(
         flags & 0x01
     )
+
 
     app_retry = bool(
         flags & 0x08
@@ -90,8 +90,7 @@ def parse_payload(payload):
 
         "seq": seq,
 
-        "boot_id":
-            hex(boot_id),
+        "boot_id": hex(boot_id),
 
         "send_time_ms":
             send_time_ms,
@@ -113,6 +112,7 @@ def parse_payload(payload):
 
         "flags":
             hex(flags)
+
     }
 
 
@@ -121,8 +121,7 @@ def parse_payload(payload):
 # MQTT连接回调
 # ==========================
 
-def on_connect(client, userdata,
-                flags, rc):
+def on_connect(client, userdata, flags, rc):
 
     if rc == 0:
 
@@ -130,14 +129,23 @@ def on_connect(client, userdata,
             "MQTT连接成功"
         )
 
+
         client.subscribe(
-            MQTT_TOPIC
+            MQTT_TOPICS
         )
 
+
         print(
-            "订阅:",
-            MQTT_TOPIC
+            "订阅Topic:"
         )
+
+
+        for topic, qos in MQTT_TOPICS:
+            print(
+                " ",
+                topic
+            )
+
 
     else:
 
@@ -149,12 +157,10 @@ def on_connect(client, userdata,
 
 
 # ==========================
-# MQTT消息回调
+# MQTT消息处理
 # ==========================
 
-def on_message(client,
-                userdata,
-                msg):
+def on_message(client, userdata, msg):
 
 
     print("\n========================")
@@ -168,156 +174,285 @@ def on_message(client,
     )
 
 
-    # MQTT JSON
-    data = json.loads(
-        msg.payload.decode()
-    )
+    try:
+
+        data = json.loads(
+            msg.payload.decode()
+        )
 
 
-    # ======================
-    # 基础信息
-    # ======================
+    except Exception as e:
 
-    device_info = (
-        data["deviceInfo"]
-    )
+        print(
+            "JSON解析失败:",
+            e
+        )
 
-
-    print("\n设备:")
-
-    print(
-        "DevEUI:",
-        device_info["devEui"]
-    )
+        return
 
 
-    print(
-        "Name:",
-        device_info["deviceName"]
-    )
 
+    # ==================================================
+    # WiFi MQTT 数据
+    # ==================================================
 
-    print("\n时间:")
-
-    print(
-        data["time"]
-    )
-
-
-    # ======================
-    # 网关信息
-    # ======================
-
-    rx = data["rxInfo"][0]
-
-
-    print("\n无线参数:")
-
-    print(
-        "Gateway:",
-        rx["gatewayId"]
-    )
-
-
-    print(
-        "RSSI:",
-        rx["rssi"]
-    )
-
-
-    print(
-        "SNR:",
-        rx["snr"]
-    )
-
-
-    # ======================
-    # Payload
-    # ======================
-
-
-    payload_b64 = data["data"]
-
-
-    print("\nBase64:")
-
-    print(
-        payload_b64
-    )
-
-
-    payload = base64.b64decode(
-        payload_b64
-    )
-
-
-    print("\nHEX:")
-
-    print(
-        payload.hex()
-    )
-
-
-    result = parse_payload(
-        payload
-    )
-
-
-    if result:
+    if msg.topic == "s3/eora-s3-400tb-001/data":
 
 
         print(
-            "\n=======解析结果======="
+            "\n========== WiFi数据 =========="
+        )
+
+
+        print(
+            "设备:",
+            data.get("device_id")
+        )
+
+
+        print(
+            "DevEUI:",
+            data.get("dev_eui")
+        )
+
+
+        print(
+            "序号:",
+            data.get("seq")
+        )
+
+
+        print(
+            "Boot ID:",
+            data.get("boot_id")
+        )
+
+
+        print(
+            "发送时间:",
+            data.get("send_time_ms"),
+            "ms"
         )
 
 
         print(
             "温度:",
-            result["temperature"],
+            data.get("temperature"),
             "℃"
         )
 
 
         print(
             "湿度:",
-            result["humidity"],
+            data.get("humidity"),
             "%"
         )
 
 
         print(
-            "序号:",
-            result["seq"]
+            "WiFi重传:",
+            data.get("wifi_retry_count")
         )
 
 
         print(
-            "Boot ID:",
-            result["boot_id"]
+            "链路:",
+            data.get("link")
         )
 
 
         print(
-            "LoRaWAN重传:",
-            result["lorawan_retry_count"]
+            "============================"
+        )
+
+
+        return
+
+
+
+    # ==================================================
+    # LoRaWAN / ChirpStack 数据
+    # ==================================================
+
+    if msg.topic.startswith(
+        "application/"
+    ):
+
+
+        print(
+            "\n========== LoRaWAN数据 =========="
+        )
+
+
+        device_info = data.get(
+            "deviceInfo",
+            {}
         )
 
 
         print(
-            "已入网:",
-            result["joined"]
+            "DevEUI:",
+            device_info.get(
+                "devEui"
+            )
         )
 
 
         print(
-            "应用层重传:",
-            result["application_retry"]
+            "设备:",
+            device_info.get(
+                "deviceName"
+            )
+        )
+
+
+
+        print(
+            "\n时间:"
+        )
+
+        print(
+            data.get(
+                "time"
+            )
+        )
+
+
+
+        rx_info = data.get(
+            "rxInfo",
+            []
+        )
+
+
+        if rx_info:
+
+
+            rx = rx_info[0]
+
+
+            print(
+                "\n网关:"
+            )
+
+
+            print(
+                "Gateway:",
+                rx.get(
+                    "gatewayId"
+                )
+            )
+
+
+            print(
+                "RSSI:",
+                rx.get(
+                    "rssi"
+                )
+            )
+
+
+            print(
+                "SNR:",
+                rx.get(
+                    "snr"
+                )
+            )
+
+
+
+        payload_b64 = data.get(
+            "data"
         )
 
 
         print(
-            "====================="
+            "\nBase64:"
         )
+
+
+        print(
+            payload_b64
+        )
+
+
+
+        payload = base64.b64decode(
+            payload_b64
+        )
+
+
+        print(
+            "\nHEX:"
+        )
+
+
+        print(
+            payload.hex()
+        )
+
+
+
+        result = parse_payload(
+            payload
+        )
+
+
+        if result:
+
+
+            print(
+                "\n======= LoRa解析结果 ======="
+            )
+
+
+            print(
+                "温度:",
+                result["temperature"],
+                "℃"
+            )
+
+
+            print(
+                "湿度:",
+                result["humidity"],
+                "%"
+            )
+
+
+            print(
+                "序号:",
+                result["seq"]
+            )
+
+
+            print(
+                "Boot ID:",
+                result["boot_id"]
+            )
+
+
+            print(
+                "LoRaWAN重传:",
+                result["lorawan_retry_count"]
+            )
+
+
+            print(
+                "已入网:",
+                result["joined"]
+            )
+
+
+            print(
+                "应用层重传:",
+                result["application_retry"]
+            )
+
+
+            print(
+                "============================"
+            )
 
 
 
@@ -325,12 +460,16 @@ def on_message(client,
 # 主程序
 # ==========================
 
-client = mqtt.Client()
+
+client = mqtt.Client(
+    mqtt.CallbackAPIVersion.VERSION1
+)
 
 
 client.on_connect = on_connect
 
 client.on_message = on_message
+
 
 
 print(
@@ -343,6 +482,7 @@ client.connect(
     MQTT_PORT,
     60
 )
+
 
 
 client.loop_forever()
