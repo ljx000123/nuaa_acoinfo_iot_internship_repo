@@ -3,33 +3,46 @@ import base64
 import paho.mqtt.client as mqtt
 
 
-# ==========================
+# ==================================================
 # MQTT配置
-# ==========================
+# ==================================================
 
-MQTT_HOST = "192.168.137.118"
+MQTT_HOST = "192.168.3.219"
 
 MQTT_PORT = 1883
 
 
-# 两个数据入口
+# 当前两个数据入口
 MQTT_TOPICS = [
-    ("application/+/device/+/event/up", 1),
-    ("s3/eora-s3-400tb-001/data", 1)
+
+    # LoRaWAN统一topic
+    (
+        "bridge/uplink/lora/+/data",
+        1
+    ),
+
+    # WiFi原始topic（保持不变）
+    (
+        "s3/eora-s3-400tb-001/data",
+        1
+    )
+
 ]
 
 
-# ==========================
+# ==================================================
 # LoRa Payload解析
-# ==========================
+# ==================================================
 
 def parse_payload(payload):
 
     if len(payload) != 16:
+
         print(
             "Payload长度异常:",
             len(payload)
         )
+
         return None
 
 
@@ -60,6 +73,7 @@ def parse_payload(payload):
         signed=True
     )
 
+
     temperature = temp_raw / 10.0
 
 
@@ -68,6 +82,7 @@ def parse_payload(payload):
         payload[13:15],
         byteorder="big"
     )
+
 
     humidity = humi_raw / 10.0
 
@@ -92,34 +107,27 @@ def parse_payload(payload):
 
         "boot_id": hex(boot_id),
 
-        "send_time_ms":
-            send_time_ms,
+        "send_time_ms": send_time_ms,
 
-        "lorawan_retry_count":
-            retry_count,
+        "lorawan_retry_count": retry_count,
 
-        "temperature":
-            temperature,
+        "temperature": temperature,
 
-        "humidity":
-            humidity,
+        "humidity": humidity,
 
-        "joined":
-            joined,
+        "joined": joined,
 
-        "application_retry":
-            app_retry,
+        "application_retry": app_retry,
 
-        "flags":
-            hex(flags)
+        "flags": hex(flags)
 
     }
 
 
 
-# ==========================
+# ==================================================
 # MQTT连接回调
-# ==========================
+# ==================================================
 
 def on_connect(client, userdata, flags, rc):
 
@@ -141,6 +149,7 @@ def on_connect(client, userdata, flags, rc):
 
 
         for topic, qos in MQTT_TOPICS:
+
             print(
                 " ",
                 topic
@@ -156,9 +165,9 @@ def on_connect(client, userdata, flags, rc):
 
 
 
-# ==========================
+# ==================================================
 # MQTT消息处理
-# ==========================
+# ==================================================
 
 def on_message(client, userdata, msg):
 
@@ -172,6 +181,7 @@ def on_message(client, userdata, msg):
     print(
         msg.topic
     )
+
 
 
     try:
@@ -271,17 +281,39 @@ def on_message(client, userdata, msg):
 
 
     # ==================================================
-    # LoRaWAN / ChirpStack 数据
+    # LoRaWAN MQTT 数据
     # ==================================================
 
     if msg.topic.startswith(
-        "application/"
+        "bridge/uplink/lora/"
     ):
 
 
         print(
             "\n========== LoRaWAN数据 =========="
         )
+
+
+        # 从统一topic获取device_id
+
+        topic_parts = msg.topic.split("/")
+
+
+        if len(topic_parts) >= 5:
+
+            device_id = topic_parts[3]
+
+        else:
+
+            device_id = "unknown"
+
+
+
+        print(
+            "Device ID:",
+            device_id
+        )
+
 
 
         device_info = data.get(
@@ -310,6 +342,7 @@ def on_message(client, userdata, msg):
         print(
             "\n时间:"
         )
+
 
         print(
             data.get(
@@ -377,9 +410,20 @@ def on_message(client, userdata, msg):
 
 
 
+        if payload_b64 is None:
+
+            print(
+                "无Payload数据"
+            )
+
+            return
+
+
+
         payload = base64.b64decode(
             payload_b64
         )
+
 
 
         print(
@@ -396,6 +440,7 @@ def on_message(client, userdata, msg):
         result = parse_payload(
             payload
         )
+
 
 
         if result:
@@ -456,10 +501,9 @@ def on_message(client, userdata, msg):
 
 
 
-# ==========================
+# ==================================================
 # 主程序
-# ==========================
-
+# ==================================================
 
 client = mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION1
@@ -475,6 +519,7 @@ client.on_message = on_message
 print(
     "正在连接MQTT..."
 )
+
 
 
 client.connect(
