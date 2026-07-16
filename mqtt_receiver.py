@@ -12,18 +12,21 @@ MQTT_HOST = "192.168.3.219"
 MQTT_PORT = 1883
 
 
-# 当前两个数据入口
+# ==================================================
+# 统一MQTT Topic
+# ==================================================
+
 MQTT_TOPICS = [
 
-    # LoRaWAN统一topic
+    # LoRa统一topic
     (
         "bridge/uplink/lora/+/data",
         1
     ),
 
-    # WiFi原始topic（保持不变）
+    # S3 WiFi统一topic
     (
-        "s3/eora-s3-400tb-001/data",
+        "bridge/uplink/generic/eora_s3_400tb_001/data",
         1
     )
 
@@ -91,16 +94,6 @@ def parse_payload(payload):
     flags = payload[15]
 
 
-    joined = bool(
-        flags & 0x01
-    )
-
-
-    app_retry = bool(
-        flags & 0x08
-    )
-
-
     return {
 
         "seq": seq,
@@ -115,9 +108,9 @@ def parse_payload(payload):
 
         "humidity": humidity,
 
-        "joined": joined,
+        "joined": bool(flags & 0x01),
 
-        "application_retry": app_retry,
+        "application_retry": bool(flags & 0x08),
 
         "flags": hex(flags)
 
@@ -126,16 +119,14 @@ def parse_payload(payload):
 
 
 # ==================================================
-# MQTT连接回调
+# MQTT连接
 # ==================================================
 
 def on_connect(client, userdata, flags, rc):
 
     if rc == 0:
 
-        print(
-            "MQTT连接成功"
-        )
+        print("MQTT连接成功")
 
 
         client.subscribe(
@@ -203,71 +194,113 @@ def on_message(client, userdata, msg):
 
 
     # ==================================================
-    # WiFi MQTT 数据
+    # S3 WiFi 数据
     # ==================================================
 
-    if msg.topic == "s3/eora-s3-400tb-001/data":
+    if msg.topic == \
+        "bridge/uplink/generic/eora_s3_400tb_001/data":
 
 
         print(
-            "\n========== WiFi数据 =========="
+            "\n========== WiFi S3数据 =========="
         )
 
 
         print(
-            "设备:",
+            "Device ID:",
             data.get("device_id")
         )
 
 
         print(
-            "DevEUI:",
-            data.get("dev_eui")
+            "Name:",
+            data.get("name")
         )
 
 
         print(
-            "序号:",
-            data.get("seq")
+            "Type:",
+            data.get("type")
         )
 
 
         print(
-            "Boot ID:",
-            data.get("boot_id")
+            "Status:",
+            data.get("status")
         )
 
 
         print(
-            "发送时间:",
-            data.get("send_time_ms"),
-            "ms"
+            "Source:",
+            data.get("source")
         )
 
 
         print(
-            "温度:",
+            "Timestamp:",
+            data.get("timestamp")
+        )
+
+
+        print(
+            "Temperature:",
             data.get("temperature"),
             "℃"
         )
 
 
         print(
-            "湿度:",
+            "Humidity:",
             data.get("humidity"),
             "%"
         )
 
 
         print(
-            "WiFi重传:",
-            data.get("wifi_retry_count")
+            "Signal:",
+            data.get("signal")
+        )
+
+
+
+        raw = data.get(
+            "raw",
+            {}
         )
 
 
         print(
-            "链路:",
-            data.get("link")
+            "\nRaw:"
+        )
+
+
+        print(
+            "DevEUI:",
+            raw.get("dev_eui")
+        )
+
+
+        print(
+            "Boot ID:",
+            raw.get("boot_id")
+        )
+
+
+        print(
+            "Seq:",
+            raw.get("seq")
+        )
+
+
+        print(
+            "WiFi Retry:",
+            raw.get("wifi_retry_count")
+        )
+
+
+        print(
+            "Link:",
+            raw.get("link")
         )
 
 
@@ -281,7 +314,7 @@ def on_message(client, userdata, msg):
 
 
     # ==================================================
-    # LoRaWAN MQTT 数据
+    # LoRa 数据
     # ==================================================
 
     if msg.topic.startswith(
@@ -294,14 +327,15 @@ def on_message(client, userdata, msg):
         )
 
 
-        # 从统一topic获取device_id
+        # topic:
+        # bridge/uplink/lora/{device_id}/data
 
-        topic_parts = msg.topic.split("/")
+        parts = msg.topic.split("/")
 
 
-        if len(topic_parts) >= 5:
+        if len(parts) >= 5:
 
-            device_id = topic_parts[3]
+            device_id = parts[3]
 
         else:
 
@@ -313,7 +347,6 @@ def on_message(client, userdata, msg):
             "Device ID:",
             device_id
         )
-
 
 
         device_info = data.get(
@@ -340,14 +373,8 @@ def on_message(client, userdata, msg):
 
 
         print(
-            "\n时间:"
-        )
-
-
-        print(
-            data.get(
-                "time"
-            )
+            "时间:",
+            data.get("time")
         )
 
 
@@ -365,31 +392,20 @@ def on_message(client, userdata, msg):
 
 
             print(
-                "\n网关:"
-            )
-
-
-            print(
                 "Gateway:",
-                rx.get(
-                    "gatewayId"
-                )
+                rx.get("gatewayId")
             )
 
 
             print(
                 "RSSI:",
-                rx.get(
-                    "rssi"
-                )
+                rx.get("rssi")
             )
 
 
             print(
                 "SNR:",
-                rx.get(
-                    "snr"
-                )
+                rx.get("snr")
             )
 
 
@@ -399,25 +415,20 @@ def on_message(client, userdata, msg):
         )
 
 
-        print(
-            "\nBase64:"
-        )
-
-
-        print(
-            payload_b64
-        )
-
-
-
         if payload_b64 is None:
 
             print(
-                "无Payload数据"
+                "无Payload"
             )
 
             return
 
+
+
+        print(
+            "Base64:",
+            payload_b64
+        )
 
 
         payload = base64.b64decode(
@@ -425,13 +436,8 @@ def on_message(client, userdata, msg):
         )
 
 
-
         print(
-            "\nHEX:"
-        )
-
-
-        print(
+            "HEX:",
             payload.hex()
         )
 
@@ -478,19 +484,19 @@ def on_message(client, userdata, msg):
 
 
             print(
-                "LoRaWAN重传:",
+                "LoRa重传:",
                 result["lorawan_retry_count"]
             )
 
 
             print(
-                "已入网:",
+                "Joined:",
                 result["joined"]
             )
 
 
             print(
-                "应用层重传:",
+                "App Retry:",
                 result["application_retry"]
             )
 
@@ -521,13 +527,11 @@ print(
 )
 
 
-
 client.connect(
     MQTT_HOST,
     MQTT_PORT,
     60
 )
-
 
 
 client.loop_forever()
