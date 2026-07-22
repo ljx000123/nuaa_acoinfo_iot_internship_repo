@@ -19,20 +19,35 @@ MQTT_PORT = 1883
 APPLICATION_ID = "3ed92fba-9e06-4b8e-ad41-54927a0fa89d"
 
 
-# 上行
+# ==================================================
+# 上行Topic
+# ==================================================
+
 UPLINK_TOPIC = (
-    "application/+/device/+/event/up"
+    "bridge/uplink/lora/dc56b7d6a7dd94a1/data"
 )
 
 
-# 下行
-DOWNLINK_TOPIC = (
-    "application/{}/device/{{}}/command/down"
-    .format(APPLICATION_ID)
+# ==================================================
+# HA ACK独立Topic
+# 不直接发送到ChirpStack command/down
+# 由converter.py负责转换
+# ==================================================
+
+HA_ACK_TOPIC = (
+    "bridge/downlink/ha/{}"
 )
 
 
-SAVE_PATH = "./images"
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+
+SAVE_PATH = os.path.join(
+    BASE_DIR,
+    "images"
+)
 
 
 os.makedirs(
@@ -41,20 +56,28 @@ os.makedirs(
 )
 
 
+print(
+    "IMAGE SAVE PATH:",
+    SAVE_PATH
+)
+
 
 # ==================================================
 # 图片缓存
 # ==================================================
 
 # key:
-# device_id + image_seq
+# (device_id,image_seq)
 
 image_cache = {}
 
 
 
 # 超时时间
+
 IMAGE_TIMEOUT = 60
+
+
 
 
 
@@ -102,14 +125,19 @@ def parse_hub_camera(payload):
 
 
     if len(payload) < 24:
+
         return None
+
 
 
     if payload[0:2] != b"HC":
+
         return None
 
 
+
     if payload[2] != 3:
+
         return None
 
 
@@ -118,6 +146,7 @@ def parse_hub_camera(payload):
 
 
     if header_len < 24:
+
         return None
 
 
@@ -126,11 +155,13 @@ def parse_hub_camera(payload):
 
 
         "flags":
+
             payload[3],
 
 
 
         "image_seq":
+
             int.from_bytes(
                 payload[4:8],
                 "little"
@@ -139,6 +170,7 @@ def parse_hub_camera(payload):
 
 
         "image_len":
+
             int.from_bytes(
                 payload[8:11],
                 "little"
@@ -147,41 +179,49 @@ def parse_hub_camera(payload):
 
 
         "chunk_index":
+
             payload[11],
 
 
 
         "chunk_count":
+
             payload[12],
 
 
 
         "chunk_len":
+
             payload[13],
 
 
 
         "repeat_index":
+
             payload[14],
 
 
 
         "repeat_count":
+
             payload[15],
 
 
 
         "header_len":
+
             header_len,
 
 
 
         "codec":
+
             payload[17],
 
 
 
         "image_crc32":
+
             int.from_bytes(
                 payload[18:22],
                 "little"
@@ -190,6 +230,7 @@ def parse_hub_camera(payload):
 
 
         "chunk_crc16":
+
             int.from_bytes(
                 payload[22:24],
                 "little"
@@ -198,6 +239,7 @@ def parse_hub_camera(payload):
 
 
         "jpeg":
+
             payload[header_len:]
 
     }
@@ -222,7 +264,7 @@ def save_image(
     )
 
 
-    path=os.path.join(
+    path = os.path.join(
         SAVE_PATH,
         filename
     )
@@ -248,7 +290,7 @@ def save_image(
 
 
 # ==================================================
-# 图片接收
+# 接收chunk
 # ==================================================
 
 def process_chunk(
@@ -278,21 +320,29 @@ def process_chunk(
 
 
             "image_len":
+
                 chunk["image_len"],
 
 
+
             "chunk_count":
+
                 chunk["chunk_count"],
 
 
+
             "image_crc32":
+
                 chunk["image_crc32"],
+
 
 
             "chunks":{},
 
 
+
             "last":
+
                 now
 
         }
@@ -307,10 +357,9 @@ def process_chunk(
 
 
 
-    # ==========================
+    # --------------------------
     # CRC16检查
-    # ==========================
-
+    # --------------------------
 
     crc = crc16_ccitt_false(
         chunk["jpeg"]
@@ -330,17 +379,19 @@ def process_chunk(
 
 
 
+
     index=chunk["chunk_index"]
 
 
 
-    # 重复包去重
+    # 去重
 
     if index not in cache["chunks"]:
 
         cache["chunks"][index]=(
             chunk["jpeg"]
         )
+
 
 
     print(
@@ -357,10 +408,7 @@ def process_chunk(
 
 
 
-    # ==========================
-    # 是否收齐
-    # ==========================
-
+    # 收齐
 
     if len(cache["chunks"]) == cache["chunk_count"]:
 
@@ -378,7 +426,6 @@ def process_chunk(
 
 
     return False
-
 
 
 
@@ -440,16 +487,72 @@ def assemble_image(
 
         }
 
+# ==================================================
+# 拼图后处理
+# ==================================================
+
+def assemble_image(
+        device_id,
+        key
+):
+
+
+    cache = image_cache[key]
+
+
+    seq = key[1]
 
 
 
-    img=img[
+    img = b""
+
+
+    missing = []
+
+
+
+    for i in range(
+        cache["chunk_count"]
+    ):
+
+
+        if i not in cache["chunks"]:
+
+            missing.append(i)
+
+        else:
+
+            img += cache["chunks"][i]
+
+
+
+    if missing:
+
+
+        print(
+            "MISSING:",
+            missing
+        )
+
+
+        return {
+
+            "ok":False,
+
+            "missing":missing
+
+        }
+
+
+
+
+    img = img[
         :cache["image_len"]
     ]
 
 
 
-    crc32=binascii.crc32(
+    crc32 = binascii.crc32(
         img
     ) & 0xffffffff
 
@@ -469,9 +572,7 @@ def assemble_image(
 
         return {
 
-
             "ok":False,
-
 
             "crc_fail":True
 
@@ -479,16 +580,16 @@ def assemble_image(
 
 
 
-    if img[:2] != b"\xff\xd8":
 
+    if img[:2] != b"\xff\xd8":
 
         print(
             "JPEG HEAD ERROR"
         )
 
 
-    if img[-2:] != b"\xff\xd9":
 
+    if img[-2:] != b"\xff\xd9":
 
         print(
             "JPEG END ERROR"
@@ -515,6 +616,9 @@ def assemble_image(
 
     }
 
+
+
+
 # ==================================================
 # HA ACK协议
 # ==================================================
@@ -525,27 +629,42 @@ def build_ack(
         missing=None
 ):
 
+
     """
     HA v1
 
-    0-1   HA
-    2     version
-    3     cmd
-          0 ACK_OK
-          1 RETX_REQUEST
+    byte0-1:
+        HA
 
-    4-7   image_seq little
+    byte2:
+        version=1
 
-    8     status
-          0 ok
-          1 missing
-          2 crc_fail
+    byte3:
+        cmd
+        0 ACK_OK
+        1 RETX_REQUEST
 
-    9     missing_count
 
-    10...
-          missing chunk index
+    byte4-7:
+        image_seq little endian
+
+
+    byte8:
+        status
+        0 ok
+        1 missing
+        2 crc_fail
+
+
+    byte9:
+        missing_count
+
+
+    byte10:
+        missing chunk index list
+
     """
+
 
 
     if missing is None:
@@ -554,16 +673,14 @@ def build_ack(
 
 
 
-    # ACK_OK
-
     if status == 0:
 
-        cmd=0
-
+        cmd = 0
 
     else:
 
-        cmd=1
+        cmd = 1
+
 
 
 
@@ -571,18 +688,29 @@ def build_ack(
 
 
 
+    # HA magic
+
     payload += b"HA"
 
+
+
+    # version
 
     payload.append(
         1
     )
 
 
+
+    # cmd
+
     payload.append(
         cmd
     )
 
+
+
+    # image_seq
 
     payload += int(
         image_seq
@@ -593,11 +721,15 @@ def build_ack(
 
 
 
+    # status
+
     payload.append(
         status
     )
 
 
+
+    # missing count
 
     payload.append(
         len(missing)
@@ -605,10 +737,12 @@ def build_ack(
 
 
 
-    for x in missing:
+    # missing list
+
+    for index in missing:
 
         payload.append(
-            x
+            index
         )
 
 
@@ -620,14 +754,23 @@ def build_ack(
 
 
 # ==================================================
-# 发送Downlink
+# 发送HA ACK
+# 注意：
+# 不发送到command/down
+# 使用独立topic
 # ==================================================
 
-def send_downlink(
+def send_ha_ack(
         client,
         dev_eui,
         payload
 ):
+
+
+    topic = HA_ACK_TOPIC.format(
+        dev_eui
+    )
+
 
 
     data_b64 = base64.b64encode(
@@ -636,34 +779,27 @@ def send_downlink(
 
 
 
-    topic = (
-        f"application/"
-        f"{APPLICATION_ID}/"
-        f"device/"
-        f"{dev_eui}/"
-        "command/down"
-    )
-
-
-
-    msg={
+    msg = {
 
 
         "devEui":
+
             dev_eui,
 
 
         "confirmed":
+
             False,
 
 
         "fPort":
+
             3,
 
 
         "data":
-            data_b64
 
+            data_b64
 
     }
 
@@ -678,7 +814,7 @@ def send_downlink(
 
 
     print(
-        "\nDOWNLINK:"
+        "\n========== HA ACK =========="
     )
 
 
@@ -698,7 +834,101 @@ def send_downlink(
 
 
 # ==================================================
-# MQTT消息处理
+# 超时检查
+# 生成 RETX_REQUEST
+# ==================================================
+
+def clean_timeout(
+        client
+):
+
+
+    now=time.time()
+
+
+
+    remove=[]
+
+
+
+    for key,value in image_cache.items():
+
+
+
+        if now-value["last"] > IMAGE_TIMEOUT:
+
+
+            device_id = key[0]
+
+
+            image_seq = key[1]
+
+
+
+            missing=[]
+
+
+
+            for i in range(
+                value["chunk_count"]
+            ):
+
+
+                if i not in value["chunks"]:
+
+                    missing.append(i)
+
+
+
+            print(
+                "IMAGE TIMEOUT:",
+                key
+            )
+
+
+            print(
+                "REQUEST RETX:",
+                missing
+            )
+
+
+
+            ack = build_ack(
+                image_seq,
+                1,
+                missing
+            )
+
+
+
+            send_ha_ack(
+                client,
+                device_id,
+                ack
+            )
+
+
+
+            remove.append(
+                key
+            )
+
+
+
+
+    for key in remove:
+
+
+        del image_cache[key]
+
+
+
+
+
+
+
+# ==================================================
+# MQTT连接
 # ==================================================
 
 def on_connect(
@@ -729,11 +959,12 @@ def on_connect(
         )
 
 
+
     else:
 
 
         print(
-            "MQTT ERROR",
+            "MQTT ERROR:",
             rc
         )
 
@@ -741,6 +972,11 @@ def on_connect(
 
 
 
+
+
+# ==================================================
+# MQTT消息处理
+# ==================================================
 
 def on_message(
         client,
@@ -761,25 +997,11 @@ def on_message(
 
 
         print(
-            "JSON ERROR",
+            "JSON ERROR:",
             e
         )
 
         return
-
-
-
-
-    # 只处理 uplink
-
-
-    if not msg.topic.endswith(
-        "/up"
-    ):
-
-        return
-
-
 
 
     dev_eui=data.get(
@@ -790,9 +1012,13 @@ def on_message(
     )
 
 
+    if not msg.topic.startswith(
+            "bridge/uplink/lora/"
+    ):
+        return
+
 
     if not dev_eui:
-
 
         return
 
@@ -804,9 +1030,11 @@ def on_message(
     )
 
 
+
     if not payload_b64:
 
         return
+
 
 
 
@@ -828,13 +1056,14 @@ def on_message(
 
 
 
+
     print(
-        "\n========================"
+        "\n=============================="
     )
 
 
     print(
-        "Device:",
+        "DEVICE:",
         dev_eui
     )
 
@@ -855,14 +1084,18 @@ def on_message(
 
 
 
-    # 收完整
 
-    if isinstance(result,dict):
+    if isinstance(
+        result,
+        dict
+    ):
+
 
 
         if result.get(
             "ok"
         ):
+
 
 
             ack=build_ack(
@@ -871,7 +1104,8 @@ def on_message(
             )
 
 
-            send_downlink(
+
+            send_ha_ack(
                 client,
                 dev_eui,
                 ack
@@ -879,9 +1113,11 @@ def on_message(
 
 
 
+
         elif result.get(
             "missing"
         ):
+
 
 
             ack=build_ack(
@@ -891,11 +1127,13 @@ def on_message(
             )
 
 
-            send_downlink(
+
+            send_ha_ack(
                 client,
                 dev_eui,
                 ack
             )
+
 
 
 
@@ -904,57 +1142,21 @@ def on_message(
         ):
 
 
+
             ack=build_ack(
                 chunk["image_seq"],
                 2
             )
 
 
-            send_downlink(
+
+            send_ha_ack(
                 client,
                 dev_eui,
                 ack
             )
 
 
-
-
-
-# ==================================================
-# 清理超时图片
-# ==================================================
-
-def clean_timeout():
-
-
-    now=time.time()
-
-
-    remove=[]
-
-
-    for key,value in image_cache.items():
-
-
-        if now-value["last"] > IMAGE_TIMEOUT:
-
-
-            remove.append(
-                key
-            )
-
-
-
-    for key in remove:
-
-
-        print(
-            "TIMEOUT REMOVE:",
-            key
-        )
-
-
-        del image_cache[key]
 
 
 
@@ -967,6 +1169,7 @@ def clean_timeout():
 client=mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION1
 )
+
 
 
 client.on_connect=on_connect
@@ -989,6 +1192,7 @@ client.connect(
 
 
 
+
 while True:
 
 
@@ -997,4 +1201,6 @@ while True:
     )
 
 
-    clean_timeout()
+    clean_timeout(
+        client
+    )
