@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import base64
 import paho.mqtt.client as mqtt
@@ -7,24 +9,21 @@ import paho.mqtt.client as mqtt
 # MQTT配置
 # ==================================================
 
-MQTT_HOST = "192.168.3.219"
-
+MQTT_HOST = "192.168.200.221"
 MQTT_PORT = 1883
 
 
 # ==================================================
-# 统一MQTT Topic
+# MQTT Topic
 # ==================================================
 
 MQTT_TOPICS = [
 
-    # LoRa统一topic
     (
         "bridge/uplink/lora/+/data",
         1
     ),
 
-    # S3 WiFi统一topic
     (
         "bridge/uplink/generic/eora_s3_400tb_001/data",
         1
@@ -33,100 +32,551 @@ MQTT_TOPICS = [
 ]
 
 
+
 # ==================================================
-# LoRa Payload解析
+# S3 LoRaWAN V2
 # ==================================================
 
-def parse_payload(payload):
+def parse_s3_lora_v2(payload):
 
-    if len(payload) != 16:
 
-        print(
-            "Payload长度异常:",
-            len(payload)
-        )
-
+    if len(payload) != 37:
         return None
 
 
-    seq = int.from_bytes(
-        payload[0:2],
-        byteorder="big"
-    )
-
-
-    boot_id = int.from_bytes(
-        payload[2:6],
-        byteorder="big"
-    )
-
-
-    send_time_ms = int.from_bytes(
-        payload[6:10],
-        byteorder="big"
-    )
-
-
-    retry_count = payload[10]
-
-
-    temp_raw = int.from_bytes(
-        payload[11:13],
-        byteorder="big",
-        signed=True
-    )
-
-
-    temperature = temp_raw / 10.0
+    if payload[0] != 2:
+        return None
 
 
 
-    humi_raw = int.from_bytes(
-        payload[13:15],
-        byteorder="big"
-    )
-
-
-    humidity = humi_raw / 10.0
-
-
-
-    flags = payload[15]
+    flags = payload[1]
 
 
     return {
 
-        "seq": seq,
 
-        "boot_id": hex(boot_id),
+        "version":2,
 
-        "send_time_ms": send_time_ms,
 
-        "lorawan_retry_count": retry_count,
+        "joined":
+            bool(flags & 0x01),
 
-        "temperature": temperature,
 
-        "humidity": humidity,
+        "motor_running":
+            bool(flags & 0x02),
 
-        "joined": bool(flags & 0x01),
 
-        "application_retry": bool(flags & 0x08),
+        "led_on":
+            bool(flags & 0x04),
 
-        "flags": hex(flags)
+
+        "application_retry":
+            bool(flags & 0x08),
+
+
+
+        "seq":
+            int.from_bytes(
+                payload[2:4],
+                "big"
+            ),
+
+
+
+        "boot_id":
+            hex(
+                int.from_bytes(
+                    payload[4:8],
+                    "big"
+                )
+            ),
+
+
+
+        "temperature":
+            int.from_bytes(
+                payload[21:23],
+                "big",
+                signed=True
+            ) / 10,
+
+
+
+        "humidity":
+            int.from_bytes(
+                payload[23:25],
+                "big"
+            ) / 10,
+
+
+
+        "soil":
+            int.from_bytes(
+                payload[25:27],
+                "big"
+            ) / 10,
+
+
+
+        "rain":
+            int.from_bytes(
+                payload[27:29],
+                "big"
+            ) / 10,
+
+
+
+        "motor":
+            payload[33],
+
+
+        "servo":
+            payload[34],
+
+
+        "led":
+            payload[35],
+
+
+
+        "signal":
+            int.from_bytes(
+                payload[36:37],
+                "big",
+                signed=True
+            )
 
     }
 
 
 
+
+
 # ==================================================
-# MQTT连接
+# HUB Camera HCv2
 # ==================================================
 
-def on_connect(client, userdata, flags, rc):
+def parse_hub_camera(payload):
 
-    if rc == 0:
 
-        print("MQTT连接成功")
+    if len(payload) < 14:
+        return None
+
+
+    if payload[0:2] != b"HC":
+        return None
+
+
+    if payload[2] != 2:
+        return None
+
+
+
+    flags = payload[3]
+
+
+
+    return {
+
+
+        "version":
+            payload[2],
+
+
+
+        "camera_ok":
+            bool(flags & 0x01),
+
+
+
+        "mqtt_ok":
+            bool(flags & 0x02),
+
+
+
+        "pc_ok":
+            bool(flags & 0x04),
+
+
+
+        "image_seq":
+            int.from_bytes(
+                payload[4:8],
+                "little"
+            ),
+
+
+
+        "image_len":
+            int.from_bytes(
+                payload[8:11],
+                "little"
+            ),
+
+
+
+        "chunk_index":
+            payload[11],
+
+
+
+        "chunk_count":
+            payload[12],
+
+
+
+        "chunk_len":
+            payload[13],
+
+
+
+        "jpeg":
+            payload[14:]
+
+    }
+
+
+
+
+# ==================================================
+# WiFi S3
+# ==================================================
+
+def parse_wifi(data):
+
+
+    print(
+        "\n========== WiFi S3数据 =========="
+    )
+
+
+    print(
+        "Device:",
+        data.get("device_id")
+    )
+
+
+    print(
+        "Temperature:",
+        data.get("temperature"),
+        "℃"
+    )
+
+
+    print(
+        "Humidity:",
+        data.get("humidity"),
+        "%"
+    )
+
+
+    print(
+        "Soil:",
+        data.get("soil_moisture"),
+        "%"
+    )
+
+
+    print(
+        "Rain:",
+        data.get("rain_level"),
+        "%"
+    )
+
+
+    print(
+        "Motor:",
+        data.get("motor_status")
+    )
+
+
+    print(
+        "Servo:",
+        data.get("servo_angle")
+    )
+
+
+    print(
+        "LED:",
+        data.get("led_status")
+    )
+
+
+    print(
+        "Signal:",
+        data.get("signal")
+    )
+
+
+    print(
+        "============================"
+    )
+
+
+
+
+
+# ==================================================
+# LoRa解析
+# ==================================================
+
+def parse_lora(data,topic):
+
+
+    device_id = topic.split("/")[3]
+
+
+    print(
+        "\nDevice:",
+        device_id
+    )
+
+
+    payload_b64 = data.get(
+        "data"
+    )
+
+
+    if not payload_b64:
+
+        print(
+            "无Payload"
+        )
+
+        return
+
+
+
+    payload = base64.b64decode(
+        payload_b64
+    )
+
+
+
+    print(
+        "HEX:",
+        payload.hex()
+    )
+
+
+
+    # ----------------------
+    # HUB Camera
+    # ----------------------
+
+    hub = parse_hub_camera(
+        payload
+    )
+
+
+    if hub:
+
+
+        print(
+            "\n======= HUB Camera HC ======="
+        )
+
+
+        print(
+            "Version:",
+            hub["version"]
+        )
+
+
+        print(
+            "Camera:",
+            hub["camera_ok"]
+        )
+
+
+        print(
+            "MQTT:",
+            hub["mqtt_ok"]
+        )
+
+
+        print(
+            "PC:",
+            hub["pc_ok"]
+        )
+
+
+        print(
+            "Image Seq:",
+            hub["image_seq"]
+        )
+
+
+        print(
+            "Image Length:",
+            hub["image_len"]
+        )
+
+
+        print(
+            "Chunk:",
+            hub["chunk_index"],
+            "/",
+            hub["chunk_count"]
+        )
+
+
+        print(
+            "Chunk Length:",
+            hub["chunk_len"]
+        )
+
+
+        print(
+            "JPEG:",
+            len(hub["jpeg"]),
+            "bytes"
+        )
+
+
+        if len(hub["jpeg"]) >= 2:
+
+
+            print(
+                "JPEG HEAD:",
+                hub["jpeg"][:10].hex()
+            )
+
+
+        print(
+            "=============================="
+        )
+
+
+        return
+
+
+
+
+
+    # ----------------------
+    # S3 LoRa
+    # ----------------------
+
+    s3 = parse_s3_lora_v2(
+        payload
+    )
+
+
+    if s3:
+
+
+        print(
+            "\n======= S3 LoRa ======="
+        )
+
+
+        print(
+            "Temperature:",
+            s3["temperature"],
+            "℃"
+        )
+
+
+        print(
+            "Humidity:",
+            s3["humidity"],
+            "%"
+        )
+
+
+        print(
+            "Soil:",
+            s3["soil"],
+            "%"
+        )
+
+
+        print(
+            "Rain:",
+            s3["rain"],
+            "%"
+        )
+
+
+        print(
+            "Seq:",
+            s3["seq"]
+        )
+
+
+        print(
+            "Boot:",
+            s3["boot_id"]
+        )
+
+
+        print(
+            "Motor:",
+            "running"
+            if s3["motor_running"]
+            else
+            "stopped"
+        )
+
+
+        print(
+            "Servo:",
+            s3["servo"]
+        )
+
+
+        print(
+            "LED:",
+            "on"
+            if s3["led_on"]
+            else
+            "off"
+        )
+
+
+        print(
+            "Signal:",
+            s3["signal"]
+        )
+
+
+        print(
+            "Joined:",
+            s3["joined"]
+        )
+
+
+        print(
+            "========================"
+        )
+
+
+        return
+
+
+
+    print(
+        "未知LoRa Payload"
+    )
+
+
+
+
+
+# ==================================================
+# MQTT
+# ==================================================
+
+def on_connect(client,userdata,flags,rc):
+
+
+    if rc==0:
+
+
+        print(
+            "MQTT连接成功"
+        )
 
 
         client.subscribe(
@@ -139,37 +589,26 @@ def on_connect(client, userdata, flags, rc):
         )
 
 
-        for topic, qos in MQTT_TOPICS:
+        for t,q in MQTT_TOPICS:
 
             print(
                 " ",
-                topic
+                t
             )
 
 
-    else:
-
-        print(
-            "MQTT连接失败:",
-            rc
-        )
 
 
+def on_message(client,userdata,msg):
 
-# ==================================================
-# MQTT消息处理
-# ==================================================
-
-def on_message(client, userdata, msg):
-
-
-    print("\n========================")
 
     print(
-        "Topic:"
+        "\n========================"
     )
 
+
     print(
+        "Topic:",
         msg.topic
     )
 
@@ -177,15 +616,16 @@ def on_message(client, userdata, msg):
 
     try:
 
-        data = json.loads(
+        data=json.loads(
             msg.payload.decode()
         )
 
 
     except Exception as e:
 
+
         print(
-            "JSON解析失败:",
+            "JSON错误:",
             e
         )
 
@@ -193,332 +633,43 @@ def on_message(client, userdata, msg):
 
 
 
-    # ==================================================
-    # S3 WiFi 数据
-    # ==================================================
-
-    if msg.topic == \
-        "bridge/uplink/generic/eora_s3_400tb_001/data":
-
-
-        print(
-            "\n========== WiFi S3数据 =========="
-        )
-
-
-        print(
-            "Device ID:",
-            data.get("device_id")
-        )
-
-
-        print(
-            "Name:",
-            data.get("name")
-        )
-
-
-        print(
-            "Type:",
-            data.get("type")
-        )
-
-
-        print(
-            "Status:",
-            data.get("status")
-        )
-
-
-        print(
-            "Source:",
-            data.get("source")
-        )
-
-
-        print(
-            "Timestamp:",
-            data.get("timestamp")
-        )
-
-
-        print(
-            "Temperature:",
-            data.get("temperature"),
-            "℃"
-        )
-
-
-        print(
-            "Humidity:",
-            data.get("humidity"),
-            "%"
-        )
-
-
-        print(
-            "Signal:",
-            data.get("signal")
-        )
-
-
-
-        raw = data.get(
-            "raw",
-            {}
-        )
-
-
-        print(
-            "\nRaw:"
-        )
-
-
-        print(
-            "DevEUI:",
-            raw.get("dev_eui")
-        )
-
-
-        print(
-            "Boot ID:",
-            raw.get("boot_id")
-        )
-
-
-        print(
-            "Seq:",
-            raw.get("seq")
-        )
-
-
-        print(
-            "WiFi Retry:",
-            raw.get("wifi_retry_count")
-        )
-
-
-        print(
-            "Link:",
-            raw.get("link")
-        )
-
-
-        print(
-            "============================"
-        )
-
-
-        return
-
-
-
-    # ==================================================
-    # LoRa 数据
-    # ==================================================
 
     if msg.topic.startswith(
+        "bridge/uplink/generic/"
+    ):
+
+
+        parse_wifi(
+            data
+        )
+
+
+    elif msg.topic.startswith(
         "bridge/uplink/lora/"
     ):
 
 
-        print(
-            "\n========== LoRaWAN数据 =========="
+        parse_lora(
+            data,
+            msg.topic
         )
 
 
-        # topic:
-        # bridge/uplink/lora/{device_id}/data
-
-        parts = msg.topic.split("/")
-
-
-        if len(parts) >= 5:
-
-            device_id = parts[3]
-
-        else:
-
-            device_id = "unknown"
-
-
-
-        print(
-            "Device ID:",
-            device_id
-        )
-
-
-        device_info = data.get(
-            "deviceInfo",
-            {}
-        )
-
-
-        print(
-            "DevEUI:",
-            device_info.get(
-                "devEui"
-            )
-        )
-
-
-        print(
-            "设备:",
-            device_info.get(
-                "deviceName"
-            )
-        )
-
-
-
-        print(
-            "时间:",
-            data.get("time")
-        )
-
-
-
-        rx_info = data.get(
-            "rxInfo",
-            []
-        )
-
-
-        if rx_info:
-
-
-            rx = rx_info[0]
-
-
-            print(
-                "Gateway:",
-                rx.get("gatewayId")
-            )
-
-
-            print(
-                "RSSI:",
-                rx.get("rssi")
-            )
-
-
-            print(
-                "SNR:",
-                rx.get("snr")
-            )
-
-
-
-        payload_b64 = data.get(
-            "data"
-        )
-
-
-        if payload_b64 is None:
-
-            print(
-                "无Payload"
-            )
-
-            return
-
-
-
-        print(
-            "Base64:",
-            payload_b64
-        )
-
-
-        payload = base64.b64decode(
-            payload_b64
-        )
-
-
-        print(
-            "HEX:",
-            payload.hex()
-        )
-
-
-
-        result = parse_payload(
-            payload
-        )
-
-
-
-        if result:
-
-
-            print(
-                "\n======= LoRa解析结果 ======="
-            )
-
-
-            print(
-                "温度:",
-                result["temperature"],
-                "℃"
-            )
-
-
-            print(
-                "湿度:",
-                result["humidity"],
-                "%"
-            )
-
-
-            print(
-                "序号:",
-                result["seq"]
-            )
-
-
-            print(
-                "Boot ID:",
-                result["boot_id"]
-            )
-
-
-            print(
-                "LoRa重传:",
-                result["lorawan_retry_count"]
-            )
-
-
-            print(
-                "Joined:",
-                result["joined"]
-            )
-
-
-            print(
-                "App Retry:",
-                result["application_retry"]
-            )
-
-
-            print(
-                "============================"
-            )
 
 
 
 # ==================================================
-# 主程序
+# Main
 # ==================================================
 
-client = mqtt.Client(
+client=mqtt.Client(
     mqtt.CallbackAPIVersion.VERSION1
 )
 
 
-client.on_connect = on_connect
+client.on_connect=on_connect
 
-client.on_message = on_message
+client.on_message=on_message
 
 
 
@@ -527,11 +678,13 @@ print(
 )
 
 
+
 client.connect(
     MQTT_HOST,
     MQTT_PORT,
     60
 )
+
 
 
 client.loop_forever()
