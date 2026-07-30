@@ -1,0 +1,23 @@
+[Unit]
+Description=LoRa MQTT Topic Converter
+
+After=network-online.target docker.service systemd-timesyncd.service
+Wants=network-online.target systemd-timesyncd.service
+Requires=docker.service
+
+
+[Service]
+Type=simple
+
+WorkingDirectory=/root/mqtt_converter
+
+ExecStartPre=/usr/local/bin/wait-time-sync.sh
+
+ExecStart=/usr/bin/python3 -u /root/mqtt_converter/mqtt_topic_converter.py
+
+Restart=always
+RestartSec=5
+
+
+[Install]
+WantedBy=multi-user.target
