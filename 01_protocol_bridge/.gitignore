@@ -1,0 +1,19 @@
+.pytest_cache
+__pycache__
+.venv
+
+# Logs
+*.log
+*.pid
+logs/
+
+# SQLite runtime files
+*.db-shm
+*.db-wal
+
+# Test artifacts
+images/
+vsoa_images/
+
+# Cron / misc
+.mimocode/
