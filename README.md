@@ -1,306 +1,574 @@
-# 南航-ACOINFO 项目制实习物联网课程开发仓库
+# 南航 - ACOINFO 项目制实习物联网综合项目
 
-本仓库用于统一管理南京航空航天大学与南京翼辉信息技术有限公司（ACOINFO）项目制实习中的三个物联网方向项目，共包含 16 个课程实验。
+本仓库是南京航空航天大学与南京翼辉信息技术有限公司（ACOINFO）项目制实习中的物联网综合实践仓库，围绕 LoRa/LoRaWAN、ZigBee、与MQTT到VSOA桥接转换完成端到端数据接入、协议转换、设备控制、链路监测和场景联动验证。
 
-仓库统一管理实验源码、配置、实验指导书、测试脚本、测试记录、运行日志、结果截图、汇报 PPT 和验收材料。所有实验应达到“可运行、可测试、可记录、可复现”的基本要求。
+项目不是单一脚本集合，而是一条完整的物联网联调链路：
 
-## 1. 项目总览
+```text
+LoRa / LoRaWAN / ZigBee / WiFi 设备
+        ↓
+MQTT Broker / 网关解析程序
+        ↓
+MQTT ↔ VSOA 协议桥接组件
+        ↓
+VSOA 业务服务 / 下行控制 / 场景联动
+        ↓
+IoT 测试平台可视化、审计和验证
+```
 
-| 项目 | 目录 | 实验范围 | 主要内容 |
-| --- | --- | --- | --- |
-| 物联网传输协议桥接组件开发 | [`01_protocol_bridge/`](01_protocol_bridge/) | L5、L6、Z6 | MQTT 与 VSOA 数据转换、消息转发和接口适配 |
-| 物联网 LoRa/LoRaWAN 应用案例开发 | [`02_lora_lorawan/`](02_lora_lorawan/) | L1-L4、L7-L8 | LoRa 通信、传感采集、LoRaWAN 接入和综合应用 |
-| 物联网 ZigBee 应用案例开发 | [`03_zigbee/`](03_zigbee/) | Z1-Z5、Z7-Z8 | ZigBee 组网、数据采集、设备控制和工业应用 |
+## 项目亮点
 
-## 2. 仓库结构
+- 支持 LoRa、LoRaWAN、ZigBee、WiFi 多类设备接入。
+- 实现 MQTT 到 VSOA 的上行数据转换，以及 VSOA 到 MQTT 的下行控制。
+- 内置设备注册表、幂等去重、traceId 链路追踪和多 Broker 路由。
+- 支持 LoRaWAN HCv3 摄像头图片分片重组。
+- 支持 ZigBee Ebyte 网关原始帧解析、下行帧构造和链路质量统计。
+- 提供 FastAPI + React/Vite IoT 测试平台，用于设备状态、消息追踪、告警、场景联动和运维诊断。
+- 提供 pytest 自动化测试、端到端验证脚本、MQTT/VSOA 调试工具和 Linux systemd 部署配置。
+
+## 仓库结构
 
 ```text
 nuaa_acoinfo_iot_internship_repo/
-  01_protocol_bridge/   协议桥接项目
-  02_lora_lorawan/      LoRa/LoRaWAN 项目
-  03_zigbee/            ZigBee 项目
-  common/
-    assets/             三个项目共用素材
-    templates/          README、指导书、PPT 和测试模板
-    standards/          仓库结构和实验提交规范
-    acceptance/         公共验收清单
-  README.md             仓库总入口
+├── 01_protocol_bridge/                 # MQTT ↔ VSOA 桥接组件与 IoT 测试平台
+│   ├── src/                             # 桥接主程序、上行、下行、场景引擎
+│   ├── vsoa/                            # 内置 VSOA Python SDK
+│   ├── iot_test_platform/               # FastAPI + React/Vite 测试平台
+│   ├── tools/                           # 模拟设备、下行命令、端到端验证等工具
+│   ├── tests/                           # 自动化测试
+│   ├── config.yaml                      # 桥接统一配置
+│   ├── scenes.yaml                      # 场景联动规则
+│   ├── bridge.service                   # Linux systemd 服务示例
+│   ├── zigbee_bridge.py                 # ZigBee Ebyte 原始帧 ↔ JSON 双向桥接
+│   └── README.md                        # 协议桥接项目详细说明
+├── 02_LoRaWan/                          # LoRaWAN 网关、本地解析和下行转换脚本
+│   ├── 网关Linux/                       # 网关侧 MQTT 解析、Topic 转换和 systemd 服务
+│   ├── 本地解析程序/                    # 本地传感数据/图片接收解析程序
+│   └── Eora_hub/                        # EoRa/S3 相关辅助脚本
+├── 03_zigbee/                           # ZigBee 网关解析、板载代码和压力测试
+│   ├── MQTT上下行解析/                  # MQTT 原生 ZigBee 上下行解析链路
+│   └── ZigBee板载与压力测试代码_20260730/
+│       ├── 板载代码/                    # CC2530 SampleSwitch 源码、IAR 工程和 HEX 固件
+│       └── 压力测试代码/                # TCP 带宽测试脚本与示例结果
+├── .gitignore
+└── README.md                            # 仓库总入口
 ```
 
-每个项目使用统一的项目级结构：
-
-```text
-assets/       项目级图片和素材
-config/       项目公共配置
-docs/         项目设计和测试文档
-examples/     示例数据
-experiments/  本项目负责的实验
-logs/         项目汇总日志
-scripts/      项目公共脚本
-src/          项目公共源码
-tests/        项目级测试
-README.md     项目入口说明
-```
-
-每个实验使用统一的实验级结构：
-
-```text
-experiments/{实验编号}_{实验名称}/
-  README.md
-  src/
-  config/
-  docs/
-  slides/
-  tests/
-    logs/
-  assets/
-```
-
-## 3. 系统架构
-
-三个项目分别负责终端通信、数据接入和协议桥接，通过 MQTT 与 VSOA 形成完整的物联网数据链路。
+## 系统架构
 
 ```mermaid
 flowchart LR
-    subgraph LoRa["LoRa/LoRaWAN 项目"]
-        LS["LoRa 传感节点"]
-        LG["LoRa 接收端 / LoRaWAN 网关"]
-        LS --> LG
+    subgraph Devices["设备与网关"]
+        Lora["LoRa / LoRaWAN 传感节点"]
+        Zigbee["ZigBee 终端节点"]
+        Wifi["WiFi / EoRa S3 设备"]
+        Gateway["网关 / Broker / 解析脚本"]
     end
 
-    subgraph ZigBee["ZigBee 项目"]
-        ZS["ZigBee 终端节点"]
-        ZG["协调器 / ZigBee 网关"]
-        ZS --> ZG
+    subgraph Bridge["01_protocol_bridge"]
+        MQTT["MQTT Handler"]
+        Uplink["上行适配器\nMQTT -> VSOA"]
+        Registry["设备注册表"]
+        Downlink["下行控制\nVSOA -> MQTT"]
+        Scene["场景联动引擎"]
+        VSOA["VSOA Server :3002"]
     end
 
-    LG --> MB["MQTT Broker"]
-    ZG --> MB
-
-    subgraph Bridge["协议桥接项目"]
-        UP["MQTT -> VSOA 上行转换"]
-        DOWN["VSOA -> MQTT 下行转换"]
+    subgraph Platform["IoT 测试平台"]
+        API["FastAPI :8000"]
+        Web["React/Vite :5173"]
+        DB["SQLite 数据库"]
     end
 
-    MB --> UP
-    UP --> VS["ACOINFO VSOA 服务 / 应用"]
-    VS --> DOWN
-    DOWN --> MB
+    Lora --> Gateway
+    Zigbee --> Gateway
+    Wifi --> Gateway
+    Gateway --> MQTT
+    MQTT --> Uplink
+    Uplink --> Registry
+    Registry --> VSOA
+    VSOA --> Downlink
+    Registry --> Scene
+    Scene --> Downlink
+    Downlink --> MQTT
+    API --> VSOA
+    API --> DB
+    Web --> API
 ```
 
-上行流程：
+## 核心模块说明
 
-1. LoRa 或 ZigBee 节点采集数据。
-2. 接收端或网关将数据整理并发布到 MQTT Broker。
-3. 协议桥接组件订阅 MQTT 消息，完成字段校验和格式转换。
-4. 转换后的数据通过 VSOA 服务提供给上层应用。
-
-下行流程：
-
-1. VSOA 应用发出设备控制命令。
-2. 协议桥接组件将命令转换为 MQTT topic 和 payload。
-3. LoRa 或 ZigBee 网关接收 MQTT 消息并转发到目标设备。
-4. 设备执行命令，并根据实验设计返回状态或执行结果。
-
-各实验可以独立运行；L5、L6、Z6 需要与 LoRa 或 ZigBee 项目进行跨组联调。实际 topic、字段和 VSOA 接口以三个组确认后的接口文档为准。
-
-## 4. 硬件与软件环境
-
-### 4.1 公共软件环境
-
-| 类别 | 建议工具 | 用途 |
+| 模块 | 路径 | 作用 |
 | --- | --- | --- |
-| 操作系统 | Windows 10/11 或项目支持的 Linux | 开发、构建和测试 |
-| 版本管理 | Git、GitHub | 代码协作和版本管理 |
-| 编辑器 | VS Code 或实验指定 IDE | 编辑代码和文档 |
-| 文档工具 | Microsoft Word、PowerPoint、Markdown 预览器 | 指导书和汇报材料 |
-| 测试工具 | Python、pytest 或实验原生测试工具 | 统一测试入口和结果检查 |
-| MQTT 工具 | MQTTX、Mosquitto 客户端或项目指定工具 | 发布、订阅和观察 MQTT 消息 |
-| 串口工具 | 实验指定串口终端 | 查看嵌入式设备日志 |
+| MQTT ↔ VSOA 桥接 | `01_protocol_bridge/src/` | 统一启动上行、下行、场景引擎、VSOA RPC 与 MQTT 路由 |
+| 上行适配器 | `01_protocol_bridge/src/uplink/adapters/` | 将 LoRa、ZigBee、WiFi、Generic 数据归一化为设备上报模型 |
+| 下行控制 | `01_protocol_bridge/src/downlink/` | 校验 VSOA 控制命令，去重后发布到 MQTT 下行 Topic |
+| 场景引擎 | `01_protocol_bridge/src/scene_engine/` | 根据传感器条件触发自动控制，支持冷却、边沿触发和自动停止 |
+| ZigBee 双向桥接 | `01_protocol_bridge/zigbee_bridge.py` | 解析 Ebyte 网关原始帧并转换为 JSON，同时将控制命令转回下行帧 |
+| IoT 测试平台 | `01_protocol_bridge/iot_test_platform/` | Web 页面展示设备、消息、告警、拓扑、场景和审计记录 |
+| LoRaWAN 网关脚本 | `02_LoRaWan/网关Linux/` | 网关侧传感数据解析、S3 下行转换、MQTT Topic 转换和服务化运行 |
+| ZigBee MQTT 解析 | `03_zigbee/MQTT上下行解析/` | 使用 ZigBee 网关内置 MQTT 完成上行解析、下行控制和链路监控 |
+| ZigBee 板载与压测 | `03_zigbee/ZigBee板载与压力测试代码_20260730/` | CC2530 板载代码、HEX 固件、IAR 工程、带宽统计脚本和示例结果 |
 
-具体版本必须由实验负责人根据实际可运行环境填写在实验 README 中，不以本表代替实验环境记录。
+## 数据链路
 
-### 4.2 各项目环境
+### 上行流程
 
-| 项目 | 主要硬件 | 主要软件或协议 | 说明 |
-| --- | --- | --- | --- |
-| 协议桥接 | 不强制使用硬件 | MQTT Broker、MQTT 客户端、ACOINFO VSOA SDK/环境 | 纯软件实验可将硬件和烧录标记为“不适用” |
-| LoRa/LoRaWAN | LoRa 开发板、LoRa 模块、传感器、LoRaWAN 网关等 | 对应芯片 SDK、烧录工具、串口工具、MQTT | 型号、频率和射频参数以实际设备为准 |
-| ZigBee | ZigBee 开发板、协调器、路由器、终端、烧录器等 | 对应协议栈、IDE、烧录工具、串口工具、MQTT | 芯片型号、信道和 PAN ID 以实际实验为准 |
+1. LoRa/LoRaWAN、ZigBee 或 WiFi 设备采集数据。
+2. 网关或解析脚本将数据发布到 MQTT Topic，例如：
+   - `bridge/uplink/lora/+/data`
+   - `bridge/uplink/zigbee/+/data`
+   - `bridge/uplink/generic/+/data`
+3. 桥接组件按设备类型选择 adapter，提取 `device_id`、`device_type` 和传感器字段。
+4. 数据写入设备注册表，并通过 VSOA 查询端点和事件发布给上层服务。
+5. IoT 测试平台展示设备状态、历史数据、告警和消息追踪。
 
-每个实验应在自己的 README 中记录设备型号、数量、SDK/IDE 版本、驱动、接线或网络连接方式。仓库总 README 不锁定某一种开发板或软件版本。
+### 下行流程
 
-## 5. 配置说明
+1. VSOA RPC 或 Pub/Sub 发送控制命令。
+2. 桥接组件校验设备、命令、超时与幂等 ID。
+3. 命令转换为 MQTT 下行消息并发布到目标设备 Topic。
+4. ZigBee、LoRaWAN 或 Generic 下行转换脚本继续转为真实网关/设备可识别格式。
+5. 平台记录 ACK、超时、失败原因和操作审计。
 
-配置按“公共示例、项目公共配置、实验专用配置”分层管理：
+## 环境要求
 
-| 位置 | 内容 | 使用原则 |
+| 类型 | 建议版本 | 用途 |
 | --- | --- | --- |
-| `common/templates/` | 配置说明格式和公共模板 | 只存模板，不存个人运行参数 |
-| `{project}/config/` | 项目公共协议、服务或设备配置 | 多个实验共用时放在这里 |
-| `{project}/experiments/{实验}/config/` | 单个实验专用配置 | 仅服务于本实验时放在这里 |
-| `examples/` | 示例 payload、数据帧和演示输入 | 必须使用脱敏或模拟数据 |
+| Python | 3.8.10+，推荐 3.12+ | 桥接组件、脚本、测试平台后端 |
+| Node.js | 20+ | 测试平台前端 |
+| pnpm | 通过 `corepack` 启用 | 前端依赖管理 |
+| MQTT Broker | EMQX、Mosquitto 或现场 Broker | 设备上行和控制下行 |
+| PowerShell | Windows 10/11 自带即可 | 一键启动脚本 |
+| IAR Embedded Workbench | 与 CC2530/Z-Stack 工程匹配 | ZigBee 板载工程编译 |
 
-重点配置项：
+桥接组件依赖文件：
 
-- 协议桥接：MQTT Broker 地址和端口、topic、QoS、payload 字段、VSOA 服务名、URL 和请求方式。
-- LoRa/LoRaWAN：工作频率、带宽、扩频因子、编码率、发射功率、节点标识、网关和 MQTT 参数。
-- ZigBee：信道、PAN ID、节点角色、节点地址、串口参数、网关和 MQTT 参数。
+```text
+01_protocol_bridge/requirements-py38.txt
+01_protocol_bridge/iot_test_platform/backend/requirements.txt
+01_protocol_bridge/iot_test_platform/frontend/package.json
+```
 
-推荐提交 `config.example.yaml`、`config.example.json` 或同类示例文件，由使用者复制后填写本机配置。不得提交真实密码、Token、密钥、个人账号和仅在个人电脑有效的绝对路径。
+## 快速开始
 
-配置变更后，应在实验 README 中说明修改位置、参数含义、有效范围以及是否需要重新编译、烧录或重启服务。
-
-## 6. 快速开始
-
-### 6.1 获取仓库
+### 1. 克隆仓库
 
 ```bash
 git clone https://github.com/ljx000123/nuaa_acoinfo_iot_internship_repo.git
 cd nuaa_acoinfo_iot_internship_repo
 ```
 
-### 6.2 选择项目与实验
+### 2. 安装桥接组件依赖
 
-```text
-01_protocol_bridge/experiments/   L5、L6、Z6
-02_lora_lorawan/experiments/      L1-L4、L7-L8
-03_zigbee/experiments/            Z1-Z5、Z7-Z8
+```powershell
+cd 01_protocol_bridge
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements-py38.txt
 ```
 
-进入本人负责的实验目录，首先阅读该目录的 `README.md`。实验 README 中应提供实际环境、接线、配置、编译、烧录、运行和测试方法。
+说明：VSOA Python SDK 已内置在 `01_protocol_bridge/vsoa/`，桥接主服务应从 `01_protocol_bridge/` 目录启动，以确保优先加载仓库内置 SDK。
 
-### 6.3 准备配置
+### 3. 修改配置
 
-1. 检查实验目录和项目根目录的 `config/`。
-2. 按 README 复制配置示例，不要直接修改公共示例。
-3. 填写本机串口、网络、设备和服务参数。
-4. 启动实验需要的 MQTT Broker、网关、VSOA 环境或串口工具。
+主要配置文件为：
 
-### 6.4 构建与运行
+```text
+01_protocol_bridge/config.yaml
+```
 
-- 协议桥接实验：按照实验 README 安装依赖、启动服务和运行桥接程序，不涉及硬件时无需烧录。
-- LoRa/LoRaWAN 实验：按照实验 README 导入工程、配置射频参数、编译烧录并查看串口或网关结果。
-- ZigBee 实验：按照实验 README 选择节点角色、配置网络参数、编译烧录并完成组网。
+常用配置项：
 
-仓库不提供一个适用于所有实验的固定运行命令。每个实验负责人必须在实验 README 中给出已经验证的实际命令或 IDE 操作步骤。
-
-### 6.5 执行测试
-
-1. 按实验 README 执行自动测试或人工测试步骤。
-2. 将测试脚本和数据放入 `tests/`。
-3. 将编译、烧录、串口、MQTT、VSOA 或联调日志放入 `tests/logs/`。
-4. 使用 `test_record_YYYY-MM-DD.md` 记录实际结果。
-5. 由至少一名非作者按照 README 完成交叉复现。
-
-## 7. 实验列表
-
-### 7.1 LoRa 系列实验
-
-| 编号 | 实验名称 | 所属项目 | 实验入口 |
-| --- | --- | --- | --- |
-| L1 | LoRa 开发环境与点对点 Hello 实验 | LoRa/LoRaWAN | [L01](02_lora_lorawan/experiments/L01_lora_hello/) |
-| L2 | LoRa 传感数据采集与上报实验 | LoRa/LoRaWAN | [L02](02_lora_lorawan/experiments/L02_sensor_uplink/) |
-| L3 | LoRa 可靠传输：ACK、重传与丢包统计 | LoRa/LoRaWAN | [L03](02_lora_lorawan/experiments/L03_ack_retransmit/) |
-| L4 | LoRaWAN 网关接入与 MQTT 上行 | LoRa/LoRaWAN | [L04](02_lora_lorawan/experiments/L04_lorawan_mqtt/) |
-| L5 | LoRa MQTT 到 VSOA 上行协议转换 | 协议桥接 | [L05](01_protocol_bridge/experiments/L05_mqtt_to_vsoa/) |
-| L6 | LoRa VSOA 到 MQTT 下行控制 | 协议桥接 | [L06](01_protocol_bridge/experiments/L06_vsoa_to_mqtt/) |
-| L7 | LoRa 链路质量监测与可视化 | LoRa/LoRaWAN | [L07](02_lora_lorawan/experiments/L07_link_quality/) |
-| L8 | LoRa 低功耗环境监测综合场景 | LoRa/LoRaWAN | [L08](02_lora_lorawan/experiments/L08_low_power_monitoring/) |
-
-### 7.2 ZigBee 系列实验
-
-| 编号 | 实验名称 | 所属项目 | 实验入口 |
-| --- | --- | --- | --- |
-| Z1 | CC2530 开发环境、烧录与串口 Hello 实验 | ZigBee | [Z01](03_zigbee/experiments/Z01_cc2530_hello/) |
-| Z2 | ZigBee 协调器、路由器和终端组网实验 | ZigBee | [Z02](03_zigbee/experiments/Z02_networking/) |
-| Z3 | ZigBee 传感数据采集与 MQTT 发布实验 | ZigBee | [Z03](03_zigbee/experiments/Z03_sensor_to_mqtt/) |
-| Z4 | ZigBee 下行控制与智能开关实验 | ZigBee | [Z04](03_zigbee/experiments/Z04_downlink_control/) |
-| Z5 | ZigBee-RS485 无线透传与工业数据采集 | ZigBee | [Z05](03_zigbee/experiments/Z05_rs485_transparent/) |
-| Z6 | ZigBee MQTT 与 VSOA 双向协议转换 | 协议桥接 | [Z06](01_protocol_bridge/experiments/Z06_mqtt_vsoa_bridge/) |
-| Z7 | 智能家居环境监测与联动告警 | ZigBee | [Z07](03_zigbee/experiments/Z07_smart_home_alarm/) |
-| Z8 | ZigBee 工业现场数据采集综合实验 | ZigBee | [Z08](03_zigbee/experiments/Z08_industrial_collection/) |
-
-## 8. 公共模板与规范
-
-| 文件 | 用途 |
+| 配置段 | 说明 |
 | --- | --- |
-| [项目 README 模板](common/templates/project_readme_template.md) | 编写三个项目的总体说明 |
-| [实验 README 模板](common/templates/experiment_readme_template.md) | 编写每个实验的入口说明 |
-| [实验指导书 Word 模板](common/templates/实验指导书.docx) | 编写正式实验指导书 |
-| [实验指导书 Markdown 版](common/templates/实验指导书.md) | 在 GitHub 或 VS Code 中预览指导书 |
-| [实验汇报 PPT 模板](common/templates/实验汇报PPT模板.pptx) | 阶段汇报和最终答辩 |
-| [仓库结构规范](common/standards/repository_structure.md) | 统一项目和实验目录 |
-| [实验提交规范](common/standards/experiment_submission_standard.md) | 统一代码、文档、测试和验收要求 |
-| [公共验收清单](common/acceptance/acceptance_checklist.md) | 提交前统一检查 |
+| `vsoa.server` | 桥接组件内置 VSOA Server，默认 `0.0.0.0:3002` |
+| `vsoa.business_server` | 业务层 VSOA Server，默认 `0.0.0.0:3000` |
+| `mqtt.broker` | 主 MQTT Broker，默认用于 LoRa/Generic |
+| `mqtt.project_brokers.zigbee` | ZigBee 独立 Broker 路由 |
+| `mqtt.uplink_topics` | 桥接订阅的上行 Topic |
+| `downlink.command` | 下行命令超时、重试和幂等去重 |
+| `chirpstack` | LoRaWAN ChirpStack 下行格式 |
+| `scene_engine` | 场景联动规则文件、冷却期和规则数量限制 |
 
-实验负责人应先阅读实验提交规范，再使用实验 README、指导书、测试文档和测试记录模板完成本实验材料。
+请根据现场网络修改 MQTT Broker IP、端口、Topic、VSOA 对外地址和 ChirpStack 参数。不要提交真实密码、Token、个人账号或仅在本机有效的绝对路径。
 
-## 9. 实验交付要求
+### 4. 启动桥接主服务
 
-每个实验至少提交以下内容：
-
-- 可编译、烧录或运行的正式源代码或工程。
-- 不含密码和个人隐私的配置示例。
-- 能够支持非作者复现的实验 README 和实验指导书。
-- 覆盖环境、核心功能、异常情况和结果判断的测试内容。
-- 填写实际输入、预期结果、实际结果、执行人和日期的测试记录。
-- 能够证明编译、烧录、运行或联调结果的日志和截图。
-- 使用统一模板完成的汇报 PPT。
-- 至少一名非作者完成的交叉复现记录。
-
-仅建立目录、填写任务说明或上传未经验证的代码，不能视为实验完成。
-
-## 10. 测试与日志
-
-三个项目采用统一测试组织方式，但各实验根据实际语言、硬件和功能补充测试内容。
-
-- Python/pytest 可以作为统一测试入口，也可以调用 C、C++、Java、可执行程序或日志检查。
-- 嵌入式实验允许使用 IDE 构建、串口观察和人工操作步骤进行测试。
-- 测试脚本、数据和记录放入实验的 `tests/`。
-- 编译、烧录、串口、MQTT、VSOA 和联调日志放入 `tests/logs/`。
-- 项目级汇总日志放入项目根目录的 `logs/`。
-- README 只展示关键测试用例概览，完整步骤和实际结果放入测试文档与测试记录。
-
-## 11. 协作与提交
-
-推荐通过 Fork、独立分支和 Pull Request 协作：
-
-1. Fork 本仓库到个人 GitHub。
-2. Clone 个人 Fork，并同步主仓库最新内容。
-3. 为本人负责的实验建立独立分支。
-4. 只修改负责的实验目录或明确分配的公共文件。
-5. 完成本地运行、测试、文档和提交前检查。
-6. 推送分支并创建 Pull Request。
-7. 由项目组长或指定审核人检查后合并。
-
-提交信息示例：
-
-```text
-feat(L01): add LoRa hello communication
-test(L05): add MQTT to VSOA test cases
-docs(Z03): complete sensor uplink guide
-fix(L03): correct ACK retry handling
-chore(common): update shared template
+```powershell
+cd 01_protocol_bridge
+python src/main.py --config config.yaml
 ```
 
-## 12. 内容责任
+可选启动方式：
 
-- 正式业务代码由对应实验负责人或开发成员提交并确认。
-- 公共模板与测试负责人维护模板、规范、统一测试入口和验收格式，不代替其他成员编写正式业务代码。
-- AI 工具可以用于辅助解释、排版、检查和编写，但提交人必须理解、运行并验证相关内容。
-- 不得提交未经验证的 AI 生成业务代码、虚假测试结果或与实际版本不一致的截图。
-- 不得提交 Token、密钥、密码、个人隐私、虚拟环境、缓存和无关编译产物。
+```powershell
+# 离线模式，不连接 MQTT Broker
+python src/main.py --config config.yaml --no-mqtt
 
-## 13. 完成判定
+# 仅运行上行，不启动 Pub/Sub 下行监听
+python src/main.py --config config.yaml --uplink-only
 
-实验只有同时满足以下条件，才能标记为“已完成”：
+# 临时覆盖 MQTT Broker
+python src/main.py --config config.yaml --mqtt-broker 192.168.200.221 --mqtt-port 1883
+```
 
-- 正式代码或工程能够运行。
-- README、实验指导书和配置说明完整。
-- 核心功能及异常场景完成测试。
-- 测试记录、日志和截图真实有效。
-- 非作者能够按照文档完成交叉复现。
-- 项目组长或指定审核人完成检查。
+启动成功后，桥接组件会提供：
 
-详细要求以 [实验提交规范](common/standards/experiment_submission_standard.md) 和 [公共验收清单](common/acceptance/acceptance_checklist.md) 为准。
+| 端口 | 协议 | 用途 |
+| --- | --- | --- |
+| `3002` | VSOA | 上行查询、下行 RPC、ACK/事件发布、场景管理 |
+| `3000` | VSOA | 业务层 VSOA Server，订阅 `/ctrl/cmd` |
+| `1883` | MQTT | 连接外部 Broker，订阅上行并发布下行 |
+| `9090` | TCP | JSON Lines 注入，便于离线测试 |
+
+## ZigBee 链路使用
+
+### MQTT 原生网关链路
+
+目录：
+
+```text
+03_zigbee/MQTT上下行解析/
+```
+
+启动顺序：
+
+```powershell
+cd 03_zigbee\MQTT上下行解析
+
+# 终端 1：上行解析，原始 HEX 帧 -> JSON
+python mqtt_bridge.py
+
+# 终端 2：下行控制，JSON 命令 -> HEX 帧
+python mqtt_downlink.py
+
+# 终端 3：链路质量监控
+python link_monitor.py
+```
+
+核心 Topic：
+
+| Topic | 方向 | 说明 |
+| --- | --- | --- |
+| `zigbee/gw/uplink` | 网关 -> Broker | ZigBee 网关发布原始 HEX 帧 |
+| `zigbee/gw/downlink` | Broker -> 网关 | 下行 HEX 控制帧 |
+| `bridge/uplink/zigbee/+/data` | 解析脚本 -> 应用 | 传感器 JSON 数据 |
+| `bridge/uplink/zigbee/+/status` | 监控脚本 -> 应用 | 链路状态和质量统计 |
+| `bridge/downlink/zigbee/+/set` | 应用 -> 解析脚本 | JSON 控制命令 |
+
+### 板载代码与压力测试
+
+目录：
+
+```text
+03_zigbee/ZigBee板载与压力测试代码_20260730/
+```
+
+内容包括：
+
+- CC2530 `SampleSwitch` 应用层源码。
+- IAR 工程文件。
+- 可直接烧录的 HEX 固件。
+- `zigbee_bandwidth_tester.py` 带宽测试脚本。
+- CSV 逐帧记录和 JSON 汇总示例。
+
+压力测试示例：
+
+```powershell
+cd 03_zigbee\ZigBee板载与压力测试代码_20260730\压力测试代码
+python zigbee_bandwidth_tester.py `
+  --host 192.168.3.7 `
+  --port 8887 `
+  --expected-short 0xB25B `
+  --duration 600
+```
+
+示例测试结果显示，在目标短地址 `0xB25B`、有效测试帧 2623 帧的记录中，档位 0-6 未观察到丢帧、重复、乱序或协议栈拒绝；最大稳定档位为 10 ms 周期，实际接收帧率约 21.276 帧/秒。
+
+## LoRaWAN 链路使用
+
+目录：
+
+```text
+02_LoRaWan/
+```
+
+主要脚本：
+
+| 文件 | 作用 |
+| --- | --- |
+| `网关Linux/sensor_receiver.py` | 订阅 LoRaWAN/WiFi MQTT 数据，解析 S3 传感 payload |
+| `网关Linux/s3_downlink_converter.py` | 将上层 JSON 控制命令转换为 ChirpStack/LoRaWAN 下行 payload |
+| `网关Linux/mqtt_topic_converter.py` | MQTT Topic 转换 |
+| `网关Linux/*.service` | Linux systemd 服务示例 |
+| `本地解析程序/sensor_receiver.py` | 本地传感数据接收解析 |
+| `本地解析程序/image_receiver.py` | 本地图片接收解析 |
+
+S3 LoRaWAN 传感 payload 解析覆盖字段包括：
+
+- 序列号、启动 ID、发送时间、重传计数。
+- 温度、空气湿度、土壤湿度、降水量。
+- 电机状态、舵机角度、LED 状态。
+- 信号强度和下行命令执行结果。
+
+下行控制转换支持将 `led`、`motor`、`servo` 等 JSON 命令编码为 LoRa payload，并发布到对应 ChirpStack 下行 Topic。
+
+## IoT 测试平台
+
+目录：
+
+```text
+01_protocol_bridge/iot_test_platform/
+```
+
+功能包括：
+
+- 设备中心：按 LoRa、ZigBee、WiFi 聚合设备。
+- 实时数据：展示温度、湿度、电压、烟雾、人体红外、信号、电量、图片帧等。
+- 消息追踪：保留 MQTT 原始消息和桥接结果。
+- 链路转换：展示设备、Broker、桥接和 VSOA 之间的拓扑关系。
+- 告警中心：温度、电量、烟雾等告警与人工确认。
+- 场景联动：AND/OR 条件匹配后批量下发设备控制。
+- 下行控制：二次确认、ACK/超时状态和操作审计。
+- 权限系统：`user`、`tester`、`admin` 三种角色。
+- 深色/浅色主题和浏览器偏好保存。
+
+### 安装平台依赖
+
+```powershell
+cd 01_protocol_bridge\iot_test_platform
+python -m pip install -r backend\requirements.txt
+corepack enable
+corepack pnpm --dir frontend install
+```
+
+### 一键启动
+
+```powershell
+cd 01_protocol_bridge\iot_test_platform
+.\start_platform.ps1
+```
+
+启动后访问：
+
+- 本机：`http://127.0.0.1:5173`
+- 局域网：`http://本机局域网IP:5173`
+
+默认账号：
+
+| 角色 | 用户名 | 初始密码 |
+| --- | --- | --- |
+| 普通用户 | `user` | `user123` |
+| 测试运维员 | `tester` | `tester123` |
+| 管理员 | `admin` | `admin123` |
+
+正式联调前建议使用管理员账号修改默认密码。
+
+## 自动化测试
+
+测试目录：
+
+```text
+01_protocol_bridge/tests/
+```
+
+运行方式：
+
+```powershell
+cd 01_protocol_bridge
+
+# 全部测试
+python -m pytest tests/ -v
+
+# 按模块运行
+python -m pytest tests/downlink/ -v
+python -m pytest tests/uplink/ -v
+python -m pytest tests/platform/ -v
+python -m pytest tests/scene_engine/ -v
+
+# Python 3.8 兼容性冒烟测试
+python tools/python38_smoke.py
+```
+
+测试覆盖：
+
+- 下行命令校验、ACK 构造、幂等去重、RPC/PubSub 集成。
+- 上行 adapter、设备注册表、LoRaWAN 图片分片重组。
+- MQTT 多 Broker 路由。
+- 场景引擎条件匹配、触发、冷却和自动停止。
+- IoT 测试平台环境仪表盘、阈值告警和 LoRa 控制。
+
+## 开发与调试工具
+
+目录：
+
+```text
+01_protocol_bridge/tools/
+```
+
+| 工具 | 用途 |
+| --- | --- |
+| `sim_device.py` | 模拟 LoRa/ZigBee 设备上报 |
+| `send_downlink.py` | 手动发送下行命令 |
+| `verify_e2e.py` | 自动化端到端验证 |
+| `mqtt_monitor.py` | CLI MQTT 消息监视器 |
+| `mqtt_test.py` | MQTT Broker 连接测试 |
+| `vsoa_monitor.py` | VSOA 事件订阅监视 |
+| `start_terminals.ps1` | 一键打开多个开发终端 |
+| `python38_smoke.py` | Python 3.8 兼容性检查 |
+
+端到端验证建议启动 4 个终端：
+
+```powershell
+# 终端 1：桥接主服务
+python src/main.py --config config.yaml
+
+# 终端 2：MQTT 监控
+python tools/mqtt_monitor.py
+
+# 终端 3：模拟设备
+python tools/sim_device.py
+
+# 终端 4：端到端验证
+python tools/verify_e2e.py
+```
+
+## Linux 部署
+
+`01_protocol_bridge/bridge.service` 提供 systemd 示例，可用于 LoRaWAN 网关或 Linux 主机开机自启。
+
+示例流程：
+
+```bash
+cd /root/01_protocol_bridge
+python3 -m pip install -r requirements-py38.txt
+
+sudo cp bridge.service /etc/systemd/system/bridge.service
+sudo systemctl daemon-reload
+sudo systemctl start bridge
+sudo systemctl enable bridge
+```
+
+常用命令：
+
+```bash
+sudo systemctl status bridge
+sudo journalctl -u bridge -f
+sudo systemctl restart bridge
+sudo systemctl stop bridge
+```
+
+如果目标主机没有 Docker，请检查 `bridge.service` 中是否存在 `Requires=docker.service`，按实际环境删除或调整。
+
+## 配置与数据安全
+
+- `config.yaml` 中的 Broker 地址、VSOA 地址、Topic 和 ChirpStack 参数需要按现场环境修改。
+- 不要提交真实密码、Token、密钥、个人账号、数据库文件和本机绝对路径。
+- IoT 测试平台数据默认保存在 `01_protocol_bridge/iot_test_platform/data/platform.db`，该数据库包含账号哈希、设备数据和审计记录，应保持在 `.gitignore` 中。
+- 平台启动和正常关闭时会在 `data/backups/` 中保留 SQLite 备份。
+
+## 常见问题
+
+### 启动桥接时报 `No module named 'vsoa'`
+
+请从 `01_protocol_bridge/` 目录启动：
+
+```powershell
+cd 01_protocol_bridge
+python src/main.py --config config.yaml
+```
+
+不要在其他目录直接运行 `src/main.py`，否则可能无法优先加载仓库内置 `vsoa/`。
+
+### MQTT 连接失败
+
+检查：
+
+- `config.yaml` 中 Broker IP 和端口是否正确。
+- 当前电脑或网关是否能访问 Broker。
+- EMQX/Mosquitto 是否已启动。
+- 账号密码、QoS 和 Topic 是否与现场配置一致。
+
+### 下行命令提示设备不存在
+
+设备需要先有至少一次上行数据，写入设备注册表后才能被下行控制。请先确认目标设备在 `bridge/uplink/.../data` 上报过数据。
+
+### IoT 平台页面能打开但没有数据
+
+检查：
+
+- 是否已登录平台。
+- `01_protocol_bridge/src/main.py` 是否正在运行。
+- MQTT Broker 是否有真实设备或模拟设备数据。
+- 后端 `8000` 端口是否启动。
+- 前端访问地址和后端是否在同一台机器上。
+
+### 局域网其他电脑访问不了平台
+
+请确认：
+
+- 使用 `start_platform.ps1` 启动，或手动添加 `--host 0.0.0.0`。
+- Windows 防火墙放行 TCP `5173` 和 `8000`。
+- 其他电脑访问的是本机真实局域网 IP，而不是 `127.0.0.1`。
+
+### Git 更新后接口异常或页面 404
+
+旧后端进程可能仍在运行旧代码。可先查找并停止占用端口的进程，再重新启动平台：
+
+```powershell
+netstat -ano | findstr ":8000.*LISTENING"
+taskkill /PID <PID> /F
+cd 01_protocol_bridge\iot_test_platform
+.\start_platform.ps1
+```
+
+## 推荐联调顺序
+
+1. 启动 MQTT Broker，并确认 Broker 网络可达。
+2. 启动 ZigBee 或 LoRaWAN 网关侧解析/转换脚本。
+3. 启动 `01_protocol_bridge/src/main.py`。
+4. 使用 `tools/mqtt_monitor.py` 或 MQTTX 观察上行 Topic。
+5. 启动 IoT 测试平台。
+6. 使用模拟设备或真实设备验证上行数据。
+7. 使用平台或 `tools/send_downlink.py` 验证下行控制。
+8. 运行 `tools/verify_e2e.py` 和 pytest 测试，保存日志和结果。
+
+## 项目状态
+
+| 能力 | 状态 |
+| --- | --- |
+| MQTT -> VSOA 上行桥接 | 已实现 |
+| VSOA -> MQTT 下行控制 | 已实现 |
+| RPC 与 Pub/Sub 双通道下行 | 已实现 |
+| 多 Broker 路由 | 已实现 |
+| 设备注册表 | 已实现 |
+| 幂等去重 | 已实现 |
+| traceId 链路追踪 | 已实现 |
+| 场景联动引擎 | 已实现 |
+| IoT 测试平台 | 已实现 |
+| LoRaWAN HCv3 图片分片重组 | 已实现 |
+| ZigBee MQTT 上下行解析 | 已实现 |
+| ZigBee 板载带宽测试 | 已实现并包含示例结果 |
+
+## 相关文档入口
+
+- `01_protocol_bridge/README.md`：MQTT ↔ VSOA 桥接组件详细说明。
+- `01_protocol_bridge/src/README.md`：桥接源码架构说明。
+- `01_protocol_bridge/tools/README.md`：调试工具说明。
+- `01_protocol_bridge/tests/README.md`：测试套件说明。
+- `01_protocol_bridge/iot_test_platform/README.md`：IoT 测试平台说明。
+- `01_protocol_bridge/iot_test_platform/docs/product_scope.md`：平台产品范围。
+- `01_protocol_bridge/iot_test_platform/docs/device_integration_contract.md`：设备统一接入约定。
+- `03_zigbee/MQTT上下行解析/README.md`：ZigBee MQTT 原生链路说明。
+- `03_zigbee/ZigBee板载与压力测试代码_20260730/README.md`：ZigBee 板载代码与压力测试总结。
+
+## 维护建议
+
+- 顶层 README 只描述全局架构、启动顺序和模块入口。
+- 具体脚本参数、网关 IP、设备短地址、测试结果应写入对应子目录 README。
+- 修改 Topic、payload 或 VSOA 接口后，同步更新 `config.yaml`、设备接入约定和端到端验证脚本。
+- 新增设备类型时优先扩展 `src/uplink/adapters/`，保持桥接主流程稳定。
+- 新增平台功能时同步补充 `tests/platform/` 测试用例。
+- 所有演示、验收和联调结果建议保留命令、日志、截图和测试日期，保证可复现。
